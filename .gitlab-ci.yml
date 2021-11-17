@@ -6,7 +6,17 @@
 # See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
 stages:
 - test
-sast:
-  stage: test
-include:
-- template: Security/SAST.gitlab-ci.yml
+- deploy
+
+# sast:
+#   stage: test
+# include:
+# - template: Security/SAST.gitlab-ci.yml
+
+
+trigger_pipeline:
+  stage: deploy
+  script: 
+    - echo $CI_PIPELINE_SOURCE
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'pipeline'
