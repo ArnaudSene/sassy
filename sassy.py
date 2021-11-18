@@ -2,6 +2,7 @@
 Main script to create and manage a python project through the clean \
 architecture design.
 """
+import argparse
 import yaml as _yaml
 from yaml.parser import ParserError
 import os
@@ -24,6 +25,7 @@ class Sassy:
     def __init__(self, apps: str):
         """Init Sassy."""
         self.apps = apps
+        self.apps_path = "/".join([self._PATH, self.apps])
         self.config_file = "/".join([self._PATH, self._CONFIG_FILE])
         self.update: bool = False
         self.result = _d.Result()
@@ -103,6 +105,9 @@ class Sassy:
               - ok, Message DTO
               - err, Message DTO
         """
+        result = self.create_dir()
+        print(result)
+
         for main in self.cfg[self._STRUCTURE].keys():
             result: _d.Result = self.create_files_and_dirs(main=main)
             print(result)
@@ -122,19 +127,19 @@ class Sassy:
               - ok, Message DTO
               - err, Message DTO
         """
-        kw_system = main
+        kw_main = main
         kw_dirs = self._DIRS
         kw_files = self._FILES
 
-        if kw_system not in self.cfg[self._STRUCTURE]:
+        if kw_main not in self.cfg[self._STRUCTURE]:
             self.result.err = self.message.msg(
-                name='no_keyword', extra=kw_system)
+                name='no_keyword', extra=kw_main)
             return self.result
 
-        system = self.cfg[self._STRUCTURE][kw_system]
+        struct_main = self.cfg[self._STRUCTURE][kw_main]
 
-        dirs = system[kw_dirs] if kw_dirs in system else ['root']
-        files = system[kw_files] if kw_files in system else []
+        dirs = struct_main[kw_dirs] if kw_dirs in struct_main else ['root']
+        files = struct_main[kw_files] if kw_files in struct_main else []
 
         for dir_name in dirs:
             if dir_name != 'root':
@@ -169,7 +174,7 @@ class Sassy:
               - ok, Message DTO
               - err, Message DTO
         """
-        path = "/".join([os.getcwd(), self.apps])
+        path = self.apps_path
 
         if dir_name:
             path = "/".join([path, dir_name])
@@ -184,13 +189,15 @@ class Sassy:
 
             with open(file, 'w') as f:
                 if content:
-                    f.write(content + "\n")
+                    updated_content = self.replace_apps_content(
+                        content=content)
+                    f.write(updated_content + "\n")
 
             self.result.ok = self.message.msg(name='file_create_ok', extra=file)
 
             return self.result
 
-    def create_dir(self, name: str) -> _d.Result:
+    def create_dir(self, name: _t.Optional[str] = None) -> _d.Result:
         """
         Create directory.
 
@@ -202,7 +209,10 @@ class Sassy:
               - ok, Message DTO
               - err, Message DTO
         """
-        path = "/".join([os.getcwd(), self.apps, name])
+        if name:
+            path = "/".join([self.apps_path, name])
+        else:
+            path = self.apps_path
 
         if os.path.isdir(path) and not self.update:
             self.result.err = self.message.msg(
@@ -219,3 +229,38 @@ class Sassy:
                 name='dir_create_ok', extra=path)
 
         return self.result
+
+
+def parser():
+    """"""
+    _parser = argparse.ArgumentParser(
+        description='Manage Clean Architecture application.')
+
+    _parser.add_argument(
+        '--create', '-c', help='Application name')
+    args = _parser.parse_args()
+
+    if not args.create:
+        _parser.print_help()
+        raise ValueError("Provide action'")
+
+    return args
+
+
+def main():
+    """"""
+    try:
+        args = parser()
+
+        if args.create:
+            sassy = Sassy(apps=args.create)
+            print(f"create apps to : {sassy.apps_path}")
+            result = sassy.create_structure()
+            print(result)
+
+    except Exception as exc:
+        print(f'{exc}')
+
+
+if __name__ == '__main__':
+    main()

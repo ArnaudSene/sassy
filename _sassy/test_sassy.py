@@ -56,6 +56,12 @@ class TestSassy:
         new_content = self.sassy.replace_apps_content(content)
         assert new_content == expected
 
+    def test_new_path(self):
+        path = self.sassy._PATH
+        apps = self.sassy.apps
+        apps_path = "/".join([path, apps])
+        assert self.sassy.apps_path == apps_path
+
     # def test_create_structure(self):
     #     """"""
     #     print()
