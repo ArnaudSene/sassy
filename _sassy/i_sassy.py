@@ -1,4 +1,10 @@
-"""Interface for messages."""
+"""
+Interface for messages.
+
+Contact:
+  Arnaud SENE, arnaud.sene@halia.ca
+  Karol KOZUBAL, karol.lozubal@halia.ca
+"""
 import abc as _abc
 
 from _sassy.d_sassy import Message

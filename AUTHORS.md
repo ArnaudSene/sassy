@@ -1,1 +1,3 @@
-Arnaud SENE Karol Kozubal
+# Authors
+- Arnaud SENE, arnaud.sene@halia.ca
+- Karol KOZUBAL, karol.lozubal@halia.ca
