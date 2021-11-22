@@ -1,4 +1,10 @@
-"""Service for Sassy apps."""
+"""
+Service for Sassy.
+
+Contact:
+  Arnaud SENE, arnaud.sene@halia.ca
+  Karol KOZUBAL, karol.lozubal@halia.ca
+"""
 import os
 import typing as _t
 

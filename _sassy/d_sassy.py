@@ -1,3 +1,10 @@
+"""
+Domains for sassy.
+
+Contact:
+  Arnaud SENE, arnaud.sene@halia.ca
+  Karol KOZUBAL, karol.lozubal@halia.ca
+"""
 import dataclasses as _dt
 import typing as _t
 
