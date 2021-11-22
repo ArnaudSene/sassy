@@ -1,0 +1,38 @@
+---
+apps: __APPS__
+feature: __FEAT__
+
+structure:
+  root:
+    files:
+      - .gitignore
+      - LICENSE
+      - README.md
+      - CHANGE.md
+      - VERSION
+      - AUTHORS.md
+
+  system:
+    dirs:
+      - configs
+      - core
+      - scripts
+      - tests
+    files:
+      - __init__.py: '"""Init for __APPS__."""'
+
+  tests:
+    dirs:
+      - tests/unit/applications
+      - tests/unit/domains
+      - tests/unit/providers
+      - tests/integration
+
+  clean_arch:
+    dirs:
+      - applications
+      - domains
+      - interfaces
+      - providers
+    files:
+      - __init__.py: '"""Init for __APPS__."""'
