@@ -3,6 +3,8 @@ Main script to create and manage a python project through the clean \
 architecture design.
 """
 import argparse
+import functools
+
 import yaml as _yaml
 from yaml.parser import ParserError
 import os
@@ -10,6 +12,28 @@ import typing as _t
 
 import _sassy.d_sassy as _d
 import _sassy.p_sassy as _p
+
+
+_VERBOSE = True
+
+
+def printer(_func=None, *, verbose=False, err=False):
+    def inner(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            r = func(*args, **kwargs)
+
+            if _VERBOSE and verbose:
+                print(f"DEBUG: {r}")
+            if _VERBOSE and err and r.err:
+                print(f"ERROR: {r.err}")
+            return r
+        return wrapper
+
+    if _func is None:
+        return inner
+    else:
+        return inner(_func)
 
 
 class Sassy:
@@ -32,6 +56,7 @@ class Sassy:
         self.message = _p.MessageService()
         self.cfg: _t.Dict[str, _t.Any] = self.load_config().ok
 
+    @printer(err=True)
     def load_config(self) -> _d.Result:
         """
         Load the configuration dataset.
@@ -46,15 +71,17 @@ class Sassy:
             with open(self.config_file) as file:
                 self.result.ok = _yaml.load(file, Loader=_yaml.Loader)
 
+                if self._STRUCTURE not in self.result.ok:
+                    self.result.err = self.message.msg(
+                        name='yaml_file_kw_missing', extra=self._STRUCTURE)
+
         except FileNotFoundError as exc:
             self.result.err = self.message.msg(
                 name='yaml_file_not_found', extra=f"{exc}")
-            print(self.result)
 
         except ParserError as exc:
             self.result.err = self.message.msg(
                 name='bad_yaml_format', extra=f"{exc}")
-            print(self.result)
 
         return self.result
 
@@ -96,6 +123,7 @@ class Sassy:
 
         return files
 
+    @printer(verbose=True)
     def create_structure(self) -> _d.Result:
         """
         Create structure based on YAML file.
@@ -105,29 +133,30 @@ class Sassy:
               - ok, Message DTO
               - err, Message DTO
         """
-        result = self.create_dir()
-        print(result)
+        self.create_dir()
 
-        for main in self.cfg[self._STRUCTURE].keys():
-            result: _d.Result = self.create_files_and_dirs(main=main)
-            print(result)
+        for kw_main in self.cfg[self._STRUCTURE].keys():
+            self.create_files_and_dirs(kw_main=kw_main)
 
         self.result.ok = self.message.msg(name='create_structure_ok')
         return self.result
 
     def create_files_and_dirs(
             self,
-            main: str
+            kw_main: str
     ) -> _d.Result:
         """
         Create directories and files for system structure.
+
+        Args:
+            kw_main: A keyword as a string
 
         Returns:
             Result DTO
               - ok, Message DTO
               - err, Message DTO
         """
-        kw_main = main
+        kw_main = kw_main
         kw_dirs = self._DIRS
         kw_files = self._FILES
 
@@ -143,20 +172,19 @@ class Sassy:
 
         for dir_name in dirs:
             if dir_name != 'root':
-                result = self.create_dir(name=dir_name)
-                print(result)
+                self.create_dir(name=dir_name)
             else:
                 dir_name = None
 
             for file in files:
                 files = self.define_file(file=file)
-                result = self.create_file(files=files, dir_name=dir_name)
-                print(result)
+                self.create_file(files=files, dir_name=dir_name)
 
         self.result.ok = self.message.msg(
-            name='create_dir_files_ok', extra=main)
+            name='create_dir_files_ok', extra=kw_main)
         return self.result
 
+    @printer(verbose=True)
     def create_file(
             self,
             files: _t.Dict[str, _t.Any],
@@ -187,16 +215,24 @@ class Sassy:
                     name='file_exists', extra=file)
                 return self.result
 
-            with open(file, 'w') as f:
-                if content:
-                    updated_content = self.replace_apps_content(
-                        content=content)
-                    f.write(updated_content + "\n")
+            try:
+                with open(file, 'w') as f:
+                    if content:
+                        updated_content = self.replace_apps_content(
+                            content=content)
+                        f.write(updated_content + "\n")
 
-            self.result.ok = self.message.msg(name='file_create_ok', extra=file)
+                self.result.ok = self.message.msg(
+                    name='file_create_ok', extra=file)
+
+            except Exception as exc:
+                self.result.err = self.message.msg(
+                    name='file_create_failed', extra=file)
+                self.result.err.text += f" {exc}"
 
             return self.result
 
+    @printer(verbose=True)
     def create_dir(self, name: _t.Optional[str] = None) -> _d.Result:
         """
         Create directory.
@@ -248,7 +284,7 @@ def parser():
 
 
 def main():
-    """"""
+    """Main function."""
     try:
         args = parser()
 
