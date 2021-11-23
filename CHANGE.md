@@ -1,6 +1,15 @@
+# 0.0.1.dev4
+
+## fix 
+  
+- Dependency injection by using interface for Message
+- add _ROOT_PATH for apps location
+
+---
 # 0.0.1.dev3
 
 ## Split sassy.pl main file and create a_sassy.pl for application. 
+
 ---
 # 0.0.1.dev2
 
