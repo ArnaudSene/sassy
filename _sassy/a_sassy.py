@@ -12,7 +12,7 @@ import typing as _t
 import yaml as _yaml
 from yaml.parser import ParserError
 
-from _sassy import d_sassy as _d, p_sassy as _p
+from _sassy import d_sassy as _d, i_sassy as _i
 
 _VERBOSE = True
 
@@ -24,9 +24,9 @@ def printer(_func=None, *, verbose=False, err=False):
             r = func(*args, **kwargs)
 
             if _VERBOSE and verbose:
-                print(f"DEBUG: {r}")
+                print(f"{r}")
             if _VERBOSE and err and r.err:
-                print(f"ERROR: {r.err}")
+                print(f"{r.err}")
             return r
         return wrapper
 
@@ -40,20 +40,25 @@ class Sassy:
     """Mains Sassy class."""
 
     _PATH = os.path.dirname(os.path.abspath(__file__))
+    _ROOT_PATH = "/".join(_PATH.split('/')[:-1])
     _CONFIG_FILE = 'sassy.yml'
     _STRUCTURE = 'structure'
     _DIRS = 'dirs'
     _FILES = 'files'
     _APPS = 'apps'
 
-    def __init__(self, apps: str):
+    def __init__(
+            self,
+            apps: str,
+            message: _i.MessagesInterfaces
+    ):
         """Init Sassy."""
         self.apps = apps
-        self.apps_path = "/".join([self._PATH, self.apps])
+        self.apps_path = "/".join([self._ROOT_PATH, self.apps])
         self.config_file = "/".join([self._PATH, self._CONFIG_FILE])
         self.update: bool = False
         self.result = _d.Result()
-        self.message = _p.MessageService()
+        self.message = message
         self.cfg: _t.Dict[str, _t.Any] = self.load_config().ok
 
     @printer(err=True)

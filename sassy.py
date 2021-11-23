@@ -8,7 +8,7 @@ Contact:
 """
 import argparse
 
-from _sassy.a_sassy import Sassy
+from _sassy import a_sassy as _a, p_sassy as _p
 
 
 def parser():
@@ -33,10 +33,9 @@ def main():
         args = parser()
 
         if args.create:
-            sassy = Sassy(apps=args.create)
+            sassy = _a.Sassy(apps=args.create, message=_p.MessageService())
             print(f"create apps to : {sassy.apps_path}")
-            result = sassy.create_structure()
-            print(result)
+            sassy.create_structure()
 
     except Exception as exc:
         print(f'{exc}')
