@@ -40,8 +40,7 @@ class Sassy:
     """Mains Sassy class."""
 
     _PATH = os.path.dirname(os.path.abspath(__file__))
-    _ROOT_PATH = "/".join(os.path.dirname(os.path.abspath(__file__))
-                          .split('/')[:-1])
+    _ROOT_PATH = "/".join(_PATH.split('/')[:-1])
     _CONFIG_FILE = 'sassy.yml'
     _STRUCTURE = 'structure'
     _DIRS = 'dirs'
