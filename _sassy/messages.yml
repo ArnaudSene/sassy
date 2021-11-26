@@ -1,0 +1,70 @@
+---
+severity:
+  1: INFO
+  2: WARNING
+  3: ERROR
+  4: FATAL
+
+# INFO
+ok:
+  text: ok
+  code: 100
+
+file_create_ok:
+  text: File '{}' successfully created!
+  code: 101
+
+dir_create_ok:
+  text: Directory '{}' successfully created!
+  code: 102
+
+create_files_ok:
+  text: Files creation done!
+  code: 103
+
+create_dir_files_ok:
+  text: Files and directories creation done for '{}'!
+  code: 104
+
+create_structure_ok:
+  text: Clean architecure structure successfully created!
+  code: 105
+
+# WARNING
+file_exists:
+  text: File '{}' already exist!
+  code: 200
+
+dir_exists:
+  text: Directory '{}' already exist!
+  code: 201
+
+no_keyword:
+  text: keyword '{}' is missing in YAML file!
+  code: 202
+
+# ERROR
+error_msg:
+  text: Invalid message name, '{}' unknown!
+  code: 300
+
+file_create_failed:
+  text: Creation of file '{}' failed!!
+  code: 301
+
+dir_create_failed:
+  text: Creation of directory '{}' failed!
+  code: 302
+
+# FATAL
+bad_yaml_format:
+  text: Bad YAML file format! '{}'
+  code: 400
+
+yaml_file_not_found:
+  text: YAML file not found! '{}'
+  code: 401
+
+yaml_file_kw_missing:
+  text: YAML file keyword '{}' missing!
+  code: 402
