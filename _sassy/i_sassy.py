@@ -6,6 +6,7 @@ Contact:
   Karol KOZUBAL, karol.lozubal@halia.ca
 """
 import abc as _abc
+import typing as _t
 
 from _sassy.d_sassy import Message
 
@@ -14,7 +15,7 @@ class MessagesInterfaces(_abc.ABC):
     """Message Interface."""
 
     @_abc.abstractmethod
-    def msg(self, name: str, extra: str) -> Message:
+    def msg(self, name: str, extra: _t.Optional[str] = None) -> Message:
         """
         Read a message.
 

@@ -7,6 +7,7 @@ Contact:
 """
 import dataclasses as _dt
 import typing as _t
+import enum as _enum
 
 
 @_dt.dataclass
@@ -17,7 +18,7 @@ class Result:
     _err: _t.Optional[str] = None
 
     def __str__(self) -> str:
-        """"""
+        """Rewrite Result as a string."""
         if self.ok:
             return f'{self.ok}'
         else:
@@ -77,9 +78,19 @@ class Message:
     _text = None
     extra: _t.Optional[str] = None
 
+    class SeverityLevel(_enum.Enum):
+        """Severity levels."""
+
+        DEBUG = 10
+        INFO = 20
+        WARNING = 30
+        ERROR = 40
+        CRITICAL = 50
+
     def __repr__(self) -> str:
         """Message machine-readable."""
-        return f"Message(code: {self.code}, severity: {self.severity}, " \
+        return f"{self.__class__.__name__}" \
+               f"(code: {self.code}, severity: {self.severity}, " \
                f"text: {self.text})"
 
     def __str__(self) -> str:
@@ -106,3 +117,70 @@ class Message:
 
         if self.extra:
             self._text = text.format(self.extra)
+
+    def level(self):
+        """Get the severity level."""
+        if self.severity in self.SeverityLevel.__members__:
+            return self.SeverityLevel[self.severity].value
+        return self.SeverityLevel['INFO'].value
+
+
+@_dt.dataclass
+class File:
+    """File DTO."""
+
+    name: str
+    content: _t.Optional[str] = ''
+
+    def replace_content(
+            self,
+            payload: _t.Dict[str, _t.Any]
+    ) -> str:
+        """
+        Rename the content file.
+
+        Args:
+            payload: A key, value that represent what needs to be replaced
+                    and by which value.
+                    key: The key that needs to be replaced
+                    value: The value that will be apply
+
+        Returns:
+            The content with string replaced.
+        """
+        if self.content:
+            for k, v in payload.items():
+                self.content = self.content.replace(k, v)
+
+        return self.content
+
+    def replace_file_name(
+            self,
+            payload: _t.Dict[str, _t.Any]
+    ) -> str:
+        """
+        Replace the file name.
+
+        Args:
+            payload: A key, value that represent what needs to be replaced
+                    and by which value.
+                    key: The key that needs to be replaced
+                    value: The value that will be apply
+
+        Returns:
+            The file name with string replaced.
+        """
+        if self.name:
+            for k, v in payload.items():
+                self.name = self.name.replace(k, v)
+
+        return self.name
+
+
+@_dt.dataclass
+class Struct:
+    """Struct DTO."""
+
+    name: str
+    dirs: _t.List[_t.Any]
+    files: _t.List[File]
