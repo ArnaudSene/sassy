@@ -8,25 +8,62 @@ Contact:
 import functools
 import os
 import typing as _t
-
+import logging
+from colorlog import ColoredFormatter
 import yaml as _yaml
 from yaml.parser import ParserError
 
 from _sassy import d_sassy as _d, i_sassy as _i
 
-_VERBOSE = True
+_VERBOSE = os.environ['VERBOSE'] if 'VERBOSE' in os.environ else None
 
 
-def printer(_func=None, *, verbose=False, err=False):
+class Logger:
+    """Logger provider."""
+
+    LOG_LEVEL = logging.DEBUG
+    LOGFORMAT = "%(log_color)s%(asctime)s %(levelname)-8s%(reset)s " \
+                "%(log_color)s%(message)s%(reset)s"
+    logging.root.setLevel(LOG_LEVEL)
+    formatter = ColoredFormatter(LOGFORMAT)
+    stream = logging.StreamHandler()
+    stream.setLevel(LOG_LEVEL)
+    stream.setFormatter(formatter)
+    log = logging.getLogger('pythonConfig')
+    log.setLevel(LOG_LEVEL)
+    log.addHandler(stream)
+
+    def show(self, message: _d.Message):
+        """Show message with logging."""
+        if message.level() == 10:
+            self.log.debug(message)
+        elif message.level() == 20:
+            self.log.info(message)
+        elif message.level() == 30:
+            self.log.warning(message)
+        elif message.level() == 40:
+            self.log.error(message)
+        elif message.level() == 50:
+            self.log.critical(message)
+
+
+def printer(_func=None, *, verbose=None, show=None):
+    """Log message information."""
+
     def inner(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             r = func(*args, **kwargs)
-
-            if _VERBOSE and verbose:
-                print(f"{r}")
-            if _VERBOSE and err and r.err:
-                print(f"{r.err}")
+            logger = Logger()
+            if verbose and show == 'err' and r.err:
+                logger.show(message=r.err)
+            elif verbose and show == 'ok' and r.ok:
+                logger.show(message=r.ok)
+            elif verbose and show == 'all':
+                if r.ok:
+                    logger.show(message=r.ok)
+                else:
+                    logger.show(message=r.err)
             return r
         return wrapper
 
@@ -36,33 +73,18 @@ def printer(_func=None, *, verbose=False, err=False):
         return inner(_func)
 
 
-class Sassy:
-    """Mains Sassy class."""
-
-    _PATH = os.path.dirname(os.path.abspath(__file__))
-    _ROOT_PATH = "/".join(_PATH.split('/')[:-1])
-    _CONFIG_FILE = 'sassy.yml'
-    _STRUCTURE = 'structure'
-    _DIRS = 'dirs'
-    _FILES = 'files'
-    _APPS = 'apps'
+class Config:
+    """Class for config."""
 
     def __init__(
             self,
-            apps: str,
             message: _i.MessagesInterfaces
     ):
-        """Init Sassy."""
-        self.apps = apps
-        self.apps_path = "/".join([self._ROOT_PATH, self.apps])
-        self.config_file = "/".join([self._PATH, self._CONFIG_FILE])
-        self.update: bool = False
-        self.result = _d.Result()
+        """Init Config."""
         self.message = message
-        self.cfg: _t.Dict[str, _t.Any] = self.load_config().ok
 
-    @printer(err=True)
-    def load_config(self) -> _d.Result:
+    @printer(show='err', verbose=_VERBOSE)
+    def load_config(self, config_file) -> _d.Result:
         """
         Load the configuration dataset.
 
@@ -72,172 +94,196 @@ class Sassy:
               - err, Message DTO
 
         """
-        try:
-            with open(self.config_file) as file:
-                self.result.ok = _yaml.load(file, Loader=_yaml.Loader)
+        result = _d.Result()
 
-                if self._STRUCTURE not in self.result.ok:
-                    self.result.err = self.message.msg(
-                        name='yaml_file_kw_missing', extra=self._STRUCTURE)
+        try:
+            with open(config_file) as file:
+                result.ok = _yaml.load(file, Loader=_yaml.Loader)
 
         except FileNotFoundError as exc:
-            self.result.err = self.message.msg(
+            result.err = self.message.msg(
                 name='yaml_file_not_found', extra=f"{exc}")
 
         except ParserError as exc:
-            self.result.err = self.message.msg(
+            result.err = self.message.msg(
                 name='bad_yaml_format', extra=f"{exc}")
 
-        return self.result
+        return result
 
-    def replace_apps_content(
+
+class Sassy(Config):
+    """Mains Sassy class."""
+
+    _PATH = os.path.dirname(os.path.abspath(__file__))
+    _ROOT_PATH = "/".join(_PATH.split('/')[:-1])
+    _CONFIG_FILE = 'sassy.yml'
+    _STRUCTURE = 'structure'
+    _FEATURE = 'features'
+    _CLARC_STRUCTURE = 'clean_arch'
+    _CLARC_TESTS = 'tests'
+    _CLARC_CONTENT = 'content'
+    _DIRS = 'dirs'
+    _FILES = 'files'
+    _APPS = 'apps'
+    _FEAT = 'feature'
+
+    def __init__(
             self,
-            content: str
-    ) -> str:
-        """
-        Replace apps keyword with apps value in content.
-
-        Args:
-            content: The content file.
-
-        Returns:
-            The content updated
-        """
-        kw_apps = self.cfg[self._APPS]
-        new_content = content.replace(kw_apps, self.apps)
-        return new_content
+            apps: str,
+            message: _i.MessagesInterfaces
+    ):
+        """Init Sassy."""
+        super().__init__(message=message)
+        self.apps = apps
+        self.apps_path = "/".join([self._ROOT_PATH, self.apps])
+        self.config_file = "/".join([self._PATH, self._CONFIG_FILE])
+        self.update: bool = False
+        self.message = message
+        self.cfg: _t.Dict[str, _t.Any] = \
+            super().load_config(config_file=self.config_file).ok
 
     @staticmethod
-    def define_file(file: _t.Any) -> _t.Dict[str, _t.Any]:
+    def _get_file_dto(
+            files: _t.Union[_t.Dict[str, _t.Any], str]
+    ) -> _t.Optional[_d.File]:
         """
-        Define the file structure as a dict.
+        Get a file DTO.
 
         Args:
-            file: The file where file could be a string or a dict.
+            files: A file as a str or dict
 
         Returns:
-            A file as a dict.
+            A File DTO.
         """
-        files = {}
-        if isinstance(file, str):
-            files.update({file: ""})
+        if isinstance(files, str):
+            return _d.File(name=files)
+        elif isinstance(files, dict):
+            for f, c in files.items():
+                return _d.File(name=f, content=c)
 
-        elif isinstance(file, dict):
-            for _file, content in file.items():
-                files.update({_file: content})
-
-        return files
-
-    @printer(verbose=True)
-    def create_structure(self) -> _d.Result:
+    def _get_struct_dto(self) -> _t.List[_d.Struct]:
         """
-        Create structure based on YAML file.
+        Get the structure dataset.
 
         Returns:
-            Result DTO
-              - ok, Message DTO
-              - err, Message DTO
+            A list of Struct DTO
         """
-        self.create_dir()
+        s = self.cfg[self._STRUCTURE] if self._STRUCTURE in self.cfg else {}
+        dto = []
 
-        for kw_main in self.cfg[self._STRUCTURE].keys():
-            self.create_files_and_dirs(kw_main=kw_main)
+        for k, v in s.items():
+            dirs = v[self._DIRS] if self._DIRS in v else []
+            files = v[self._FILES] if self._FILES in v else []
+            files_dto = [self._get_file_dto(f) for f in files]
 
-        self.result.ok = self.message.msg(name='create_structure_ok')
-        return self.result
+            dto.append(_d.Struct(name=k, dirs=dirs, files=files_dto))
+        return dto
 
-    def create_files_and_dirs(
-            self,
-            kw_main: str
-    ) -> _d.Result:
+    def _get_feature_structure_dto(self) -> _t.List[_d.Struct]:
         """
-        Create directories and files for system structure.
-
-        Args:
-            kw_main: A keyword as a string
+            Get the feature structure dataset.
 
         Returns:
-            Result DTO
-              - ok, Message DTO
-              - err, Message DTO
+            A list of Struct DTO
         """
-        kw_main = kw_main
-        kw_dirs = self._DIRS
-        kw_files = self._FILES
+        s = self._get_struct_dto()
+        f = self.cfg[self._FEATURE] if self._FEATURE in self.cfg else {}
+        feats = []
 
-        if kw_main not in self.cfg[self._STRUCTURE]:
-            self.result.err = self.message.msg(
-                name='no_keyword', extra=kw_main)
-            return self.result
+        for k, v in f.items():
+            d = v[self._DIRS] if self._DIRS in v else []
+            dirs = []
+            for struct in s:
+                if struct.name in d:
+                    dirs = struct.dirs
+                    break
 
-        struct_main = self.cfg[self._STRUCTURE][kw_main]
+            files = v[self._FILES] if self._FILES in v else []
+            files_dto = [self._get_file_dto(f) for f in files]
 
-        dirs = struct_main[kw_dirs] if kw_dirs in struct_main else ['root']
-        files = struct_main[kw_files] if kw_files in struct_main else []
+            feats.append(_d.Struct(name=k, dirs=dirs, files=files_dto))
+        return feats
 
-        for dir_name in dirs:
-            if dir_name != 'root':
-                self.create_dir(name=dir_name)
-            else:
-                dir_name = None
+    def create_structure(self):
+        """Create the clean architecture structure."""
+        payload = {self.cfg[self._APPS]: self.apps}
 
-            for file in files:
-                files = self.define_file(file=file)
-                self.create_file(files=files, dir_name=dir_name)
+        for struct in self._get_struct_dto():
+            # create dir
+            dirs = struct.dirs if struct.dirs else ['/']
 
-        self.result.ok = self.message.msg(
-            name='create_dir_files_ok', extra=kw_main)
-        return self.result
+            for dir_name in dirs:
+                path = self.apps_path
+                if not dir_name == '/':
+                    path = "/".join([self.apps_path, dir_name])
 
-    @printer(verbose=True)
+                self.create_dir(name=path)
+
+                # create file
+                for file in struct.files:
+                    file_name = file.replace_file_name(payload)
+                    content = file.replace_content(payload)
+                    file_path = "/".join([path, file_name])
+                    files = {file_path: content}
+
+                    self.create_file(files=files)
+
+    def create_feature(self, feature: str):
+        """Create the clean architecture features structure."""
+        payload = {self.cfg[self._FEAT]: feature}
+
+        for struct in self._get_feature_structure_dto():
+            for dir_name in struct.dirs:
+                path = "/".join([self.apps_path, dir_name])
+
+                # create file
+                for file in struct.files:
+                    file_name = file.replace_file_name(payload)
+                    content = file.replace_content(payload)
+                    file_path = "/".join([path, file_name])
+                    files = {file_path: content}
+
+                    self.create_file(files=files)
+
+    @printer(show='all', verbose=_VERBOSE)
     def create_file(
             self,
             files: _t.Dict[str, _t.Any],
-            dir_name: _t.Optional[str] = None
     ) -> _d.Result:
         """
         Create file and add content.
 
         Args:
             files: The file name
-            dir_name: The directory
 
         Returns:
             Result DTO
               - ok, Message DTO
               - err, Message DTO
         """
-        path = self.apps_path
-
-        if dir_name:
-            path = "/".join([path, dir_name])
+        result = _d.Result()
 
         for file, content in files.items():
-            file = "/".join([path, file])
 
             if os.path.isfile(file) and not self.update:
-                self.result.err = self.message.msg(
-                    name='file_exists', extra=file)
-                return self.result
+                result.err = self.message.msg(name='file_exists', extra=file)
+                return result
 
             try:
                 with open(file, 'w') as f:
                     if content:
-                        updated_content = self.replace_apps_content(
-                            content=content)
-                        f.write(updated_content + "\n")
+                        f.write(content + "\n")
 
-                self.result.ok = self.message.msg(
-                    name='file_create_ok', extra=file)
+                result.ok = self.message.msg(name='file_create_ok', extra=file)
 
             except Exception as exc:
-                self.result.err = self.message.msg(
+                result.err = self.message.msg(
                     name='file_create_failed', extra=file)
-                self.result.err.text += f" {exc}"
+                result.err.text += f" {exc}"
 
-            return self.result
+            return result
 
-    @printer(verbose=True)
+    @printer(show='all', verbose=_VERBOSE)
     def create_dir(self, name: _t.Optional[str] = None) -> _d.Result:
         """
         Create directory.
@@ -250,23 +296,20 @@ class Sassy:
               - ok, Message DTO
               - err, Message DTO
         """
-        if name:
-            path = "/".join([self.apps_path, name])
-        else:
-            path = self.apps_path
+        result = _d.Result()
 
-        if os.path.isdir(path) and not self.update:
-            self.result.err = self.message.msg(
-                name='dir_exists', extra=path)
-            return self.result
+        if not name:
+            name = self.apps_path
+
+        if os.path.isdir(name) and not self.update:
+            result.err = self.message.msg(name='dir_exists', extra=name)
+            return result
 
         try:
-            os.makedirs(name=path)
+            os.makedirs(name=name)
         except OSError:
-            self.result.err = self.message.msg(
-                name='dir_create_failed', extra=path)
+            result.err = self.message.msg(name='dir_create_failed', extra=name)
         else:
-            self.result.ok = self.message.msg(
-                name='dir_create_ok', extra=path)
+            result.ok = self.message.msg(name='dir_create_ok', extra=name)
 
-        return self.result
+        return result

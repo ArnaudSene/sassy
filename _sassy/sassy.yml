@@ -36,3 +36,16 @@ structure:
       - providers
     files:
       - __init__.py: '"""Init for __APPS__."""'
+
+features:
+  apps:
+    dirs:
+      - clean_arch
+    files:
+      - __FEAT__.py: '"""Feature: __FEAT__."""'
+
+  tests:
+    dirs:
+      - tests
+    files:
+      - test___FEAT__.py: '"""Unit tests for __FEAT__."""'

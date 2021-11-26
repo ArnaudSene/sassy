@@ -1,3 +1,25 @@
+# 0.0.1.dev5
+
+## refacto, logging/color, feature 'feature' 
+  
+- code refactoring
+- add feature to the clean architecture structure. 
+  - The file name created as <span style="color:cyan">*FEATURE_NAME*.
+    py</span> at:
+    - domains
+    - applications
+    - interfaces
+    - providers
+
+  - The file name created as <span style="color:cyan">*test_FEATURE_NAME*.
+    py</span> at:
+    - tests/domains
+    - tests/applications
+    - tests/providers
+
+- Add logging for console output with color depending on severity  
+
+---
 # 0.0.1.dev4
 
 ## fix 
