@@ -6,11 +6,12 @@ Contact:
   Karol KOZUBAL, karol.lozubal@halia.ca
 """
 import functools
+import logging
 import os
 import typing as _t
-import logging
-from colorlog import ColoredFormatter
+
 import yaml as _yaml
+from colorlog import ColoredFormatter
 from yaml.parser import ParserError
 
 from _sassy import d_sassy as _d, i_sassy as _i
