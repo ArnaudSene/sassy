@@ -30,6 +30,10 @@ create_structure_ok:
   text: Clean architecure structure successfully created!
   code: 105
 
+file_delete_ok:
+  text: File '{}' successfully deleted!
+  code: 106
+
 # WARNING
 file_exists:
   text: File '{}' already exist!
@@ -43,6 +47,10 @@ no_keyword:
   text: keyword '{}' is missing in YAML file!
   code: 202
 
+file_not_exist:
+  text: File '{}' does not exist!
+  code: 203
+
 # ERROR
 error_msg:
   text: Invalid message name, '{}' unknown!
@@ -55,6 +63,10 @@ file_create_failed:
 dir_create_failed:
   text: Creation of directory '{}' failed!
   code: 302
+
+file_delete_failed:
+  text: Deletion of file '{}' failed!!
+  code: 303
 
 # FATAL
 bad_yaml_format:

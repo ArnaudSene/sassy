@@ -344,6 +344,49 @@ class TestSassy:
         assert r.err.code == 301
         patcher.stop()
 
+    def tests_delete_file_success(self):
+        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        sassy.update = False
+        isfile_patcher = patch(f'{self.APPS_PATH}.os.path.isfile')
+        mock_isfile = isfile_patcher.start()
+        mock_isfile.return_value = True
+
+        os_remove_patcher = patch(f'{self.APPS_PATH}.os.remove')
+        os_remove_patcher.start()
+
+        r = sassy.delete_file(file='fake_file_name')
+        isfile_patcher.stop()
+        os_remove_patcher.stop()
+        assert r.ok.code == 106
+
+    def tests_delete_file_raise_exception(self):
+        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        sassy.update = False
+        isfile_patcher = patch(f'{self.APPS_PATH}.os.path.isfile')
+        mock_isfile = isfile_patcher.start()
+        mock_isfile.return_value = True
+
+        os_remove_patcher = patch(f'{self.APPS_PATH}.os.remove')
+        mock_remove = os_remove_patcher.start()
+        mock_remove.side_effect = Exception('fake error')
+
+        r = sassy.delete_file(file='fake_file_name')
+        isfile_patcher.stop()
+        os_remove_patcher.stop()
+        assert r.err.code == 303
+
+    def tests_delete_file_file_not_exist(self):
+        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        sassy.update = False
+        isfile_patcher = patch(f'{self.APPS_PATH}.os.path.isfile')
+        mock_isfile = isfile_patcher.start()
+        mock_isfile.return_value = False
+
+        r = sassy.delete_file(file='fake_file_name')
+        assert r.err.code == 203
+
+        isfile_patcher.stop()
+
     def test_replace_content_ok(self):
         """replace ok"""
         content = '"""this is a test for __APPS__."""'
@@ -457,6 +500,49 @@ class TestSassy:
                     ''})
         ]
         mock_create_file.assert_has_calls(file_calls, any_order=True)
+
+        file_patcher.stop()
+        patcher.stop()
+
+    def test_delete_feature_ok(self):
+        mock_result = _d.Result()
+        mock_result.ok = {
+            'apps': '__ABC__',
+            'feature': '__123__',
+            'structure': {
+                'root': {
+                    'files': ['fake_file'],
+                    'dirs': ['dir_1', 'dir_2']
+                }
+            },
+            'features': {
+                'apps': {
+                    'files': ['fake_file.py'],
+                    'dirs': ['root']
+                }
+            }
+        }
+        patcher = patch(f'{self.APPS_PATH}.Config.load_config')
+        mock_cfg = patcher.start()
+        mock_cfg.return_value = mock_result
+
+        result = _d.Result()
+        result.ok = 'this is ok'
+        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        file_patcher = patch(f'{self.APPS_PATH}.Sassy.delete_file')
+
+        mock_delete_file = file_patcher.start()
+        mock_delete_file.return_value = result
+
+        sassy.delete_feature(feature='fake_feature')
+
+        file_calls = [
+            call(file=
+                '/Volumes/SSD_Data/halia/Sassy/test_sassy/dir_1/fake_file.py'),
+            call(file=
+                '/Volumes/SSD_Data/halia/Sassy/test_sassy/dir_2/fake_file.py')
+        ]
+        mock_delete_file.assert_has_calls(file_calls, any_order=True)
 
         file_patcher.stop()
         patcher.stop()
