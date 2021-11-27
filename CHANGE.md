@@ -1,3 +1,10 @@
+# 0.0.1.dev6
+
+## Remove a feature
+  
+- Remove a feature by deleting all files
+
+---
 # 0.0.1.dev5
 
 ## refacto, logging/color, feature 'feature' 

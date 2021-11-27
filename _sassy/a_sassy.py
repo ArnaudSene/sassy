@@ -37,15 +37,15 @@ class Logger:
     def show(self, message: _d.Message):
         """Show message with logging."""
         if message.level() == 10:
-            self.log.debug(message)
+            self.log.debug(message.text)
         elif message.level() == 20:
-            self.log.info(message)
+            self.log.info(message.text)
         elif message.level() == 30:
-            self.log.warning(message)
+            self.log.warning(message.text)
         elif message.level() == 40:
-            self.log.error(message)
+            self.log.error(message.text)
         elif message.level() == 50:
-            self.log.critical(message)
+            self.log.critical(message.text)
 
 
 def printer(_func=None, *, verbose=None, show=None):
@@ -56,6 +56,7 @@ def printer(_func=None, *, verbose=None, show=None):
         def wrapper(*args, **kwargs):
             r = func(*args, **kwargs)
             logger = Logger()
+
             if verbose and show == 'err' and r.err:
                 logger.show(message=r.err)
             elif verbose and show == 'ok' and r.ok:
@@ -246,6 +247,20 @@ class Sassy(Config):
 
                     self.create_file(files=files)
 
+    def delete_feature(self, feature: str):
+        """Create the clean architecture features structure."""
+        payload = {self.cfg[self._FEAT]: feature}
+
+        for struct in self._get_feature_structure_dto():
+            for dir_name in struct.dirs:
+                path = "/".join([self.apps_path, dir_name])
+
+                # create file
+                for file in struct.files:
+                    file_name = file.replace_file_name(payload)
+                    file_path = "/".join([path, file_name])
+                    self.delete_file(file=file_path)
+
     @printer(show='all', verbose=_VERBOSE)
     def create_file(
             self,
@@ -283,6 +298,39 @@ class Sassy(Config):
                 result.err.text += f" {exc}"
 
             return result
+
+    @printer(show='all', verbose=_VERBOSE)
+    def delete_file(
+            self,
+            file: str,
+    ) -> _d.Result:
+        """
+        Delete file.
+
+        Args:
+            file: The file name
+
+        Returns:
+            Result DTO
+              - ok, Message DTO
+              - err, Message DTO
+        """
+        result = _d.Result()
+
+        if not os.path.isfile(file):
+            result.err = self.message.msg(name='file_not_exist', extra=file)
+            return result
+
+        try:
+            os.remove(file)
+
+            result.ok = self.message.msg(name='file_delete_ok', extra=file)
+
+        except Exception as exc:
+            result.err = self.message.msg(name='file_delete_failed', extra=file)
+            result.err.text += f" {exc}"
+
+        return result
 
     @printer(show='all', verbose=_VERBOSE)
     def create_dir(self, name: _t.Optional[str] = None) -> _d.Result:
