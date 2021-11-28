@@ -1,3 +1,5 @@
 colorlog==6.6.0
 PyYAML==6.0
 pytest==6.2.5
+Sphinx==4.3.1
+furo==2021.11.23

@@ -20,7 +20,7 @@ _VERBOSE = os.environ['VERBOSE'] if 'VERBOSE' in os.environ else None
 
 
 class Logger:
-    """Logger provider."""
+    """Event logger class."""
 
     LOG_LEVEL = logging.DEBUG
     LOGFORMAT = "%(log_color)s%(asctime)s %(levelname)-8s%(reset)s " \
@@ -35,7 +35,23 @@ class Logger:
     log.addHandler(stream)
 
     def show(self, message: _d.Message):
-        """Show message with logging."""
+        """
+        Log the event based on ``Message`` class.
+
+        The method ``Message.level()`` returns the event level as follow:
+
+            - 10 debug
+            - 20 info
+            - 30 warning
+            - 40 error
+            - 50 critical
+
+        The attribute ``Message.text`` provide the even message.
+
+        Args:
+            message (Message): A ``Message`` :abbr:`DTO (Data Transfer Object)`.
+
+        """
         if message.level() == 10:
             self.log.debug(message.text)
         elif message.level() == 20:
@@ -49,7 +65,28 @@ class Logger:
 
 
 def printer(_func=None, *, verbose=None, show=None):
-    """Log message information."""
+    """
+    Event logging system as a ``@decorator``.
+
+    This decorator aims to choose what kind of data to log.
+
+    It is based on the ``Result`` :abbr:`DTO (Data Transfer Object)` \
+    which provide 2 attributes:
+        - Result.ok
+        - Result.err
+
+    When ``Result.ok`` has a value then ``Result.err`` is set to None \
+    and vice versa.
+
+    Args:
+        _func (function): A function to decorate.
+        verbose (str): Activate the logger. Mainly used for Unit tests.
+        show (str): What to show.
+            Choices: all | ok | err.
+
+    Returns (function):
+        The function decorated.
+    """
 
     def inner(func):
         @functools.wraps(func)
@@ -76,24 +113,25 @@ def printer(_func=None, *, verbose=None, show=None):
 
 
 class Config:
-    """Class for config."""
+    """``Config`` class."""
 
     def __init__(
             self,
             message: _i.MessagesInterfaces
     ):
-        """Init Config."""
+        """Init ``Config`` instance."""
         self.message = message
+        self.cfg = {}
 
     @printer(show='err', verbose=_VERBOSE)
     def load_config(self, config_file) -> _d.Result:
         """
         Load the configuration dataset.
 
-        Returns:
-            Result DTO
-              - ok, Dict
-              - err, Message DTO
+        Returns (Result):
+            Result :abbr:`DTO (Data Transfer Object)`.
+              - ok, (dict) A dataset.
+              - err, Message :abbr:`DTO (Data Transfer Object)`.
 
         """
         result = _d.Result()
@@ -101,6 +139,7 @@ class Config:
         try:
             with open(config_file) as file:
                 result.ok = _yaml.load(file, Loader=_yaml.Loader)
+                self.cfg = result.ok
 
         except FileNotFoundError as exc:
             result.err = self.message.msg(
@@ -114,16 +153,15 @@ class Config:
 
 
 class Sassy(Config):
-    """Mains Sassy class."""
+    """``Sassy`` class."""
 
     _PATH = os.path.dirname(os.path.abspath(__file__))
     _ROOT_PATH = "/".join(_PATH.split('/')[:-1])
     _CONFIG_FILE = 'sassy.yml'
     _STRUCTURE = 'structure'
     _FEATURE = 'features'
-    _CLARC_STRUCTURE = 'clean_arch'
-    _CLARC_TESTS = 'tests'
-    _CLARC_CONTENT = 'content'
+    _ROOT_DIRS = ['root', 'tests', 'docs']
+    _TEST = 'test'
     _DIRS = 'dirs'
     _FILES = 'files'
     _APPS = 'apps'
@@ -134,28 +172,53 @@ class Sassy(Config):
             apps: str,
             message: _i.MessagesInterfaces
     ):
-        """Init Sassy."""
-        super().__init__(message=message)
+        """
+        Init ``Sassy`` instance.
+
+        Args:
+            apps (str): An application name.
+            message (MessagesInterfaces): A message provider
+                (dependency injection).
+        """
         self.apps = apps
         self.apps_path = "/".join([self._ROOT_PATH, self.apps])
         self.config_file = "/".join([self._PATH, self._CONFIG_FILE])
         self.update: bool = False
         self.message = message
-        self.cfg: _t.Dict[str, _t.Any] = \
-            super().load_config(config_file=self.config_file).ok
+        super().__init__(message=message)
+        super().load_config(config_file=self.config_file)
+
+    def build_path(self, struct_name: str, dir_name: str) -> str:
+        """
+        Build a path based on structure name and a directory name.
+
+        Args:
+            struct_name (str): A structure name e.i: `clean_arch`.
+            dir_name (str): A directory name e.i: `applications`.
+
+        Returns (str):
+            A path.
+        """
+        apps = self.apps.replace('-', '_')
+        path = "/".join([self.apps_path, apps, dir_name])
+
+        if struct_name in self._ROOT_DIRS:
+            path = "/".join([self.apps_path, dir_name])
+
+        return path
 
     @staticmethod
     def _get_file_dto(
             files: _t.Union[_t.Dict[str, _t.Any], str]
     ) -> _t.Optional[_d.File]:
         """
-        Get a file DTO.
+        Get a ``File`` :abbr:`DTO (Data Transfer Object)`.
 
         Args:
-            files: A file as a str or dict
+            files (Union[str, dict]): A file structure.
 
-        Returns:
-            A File DTO.
+        Returns (File):
+            A ``File`` :abbr:`DTO (Data Transfer Object)`.
         """
         if isinstance(files, str):
             return _d.File(name=files)
@@ -167,8 +230,8 @@ class Sassy(Config):
         """
         Get the structure dataset.
 
-        Returns:
-            A list of Struct DTO
+        Returns (list[Struct]):
+            A list of ``Struct`` :abbr:`DTO (Data Transfer Object)`.
         """
         s = self.cfg[self._STRUCTURE] if self._STRUCTURE in self.cfg else {}
         dto = []
@@ -185,8 +248,8 @@ class Sassy(Config):
         """
             Get the feature structure dataset.
 
-        Returns:
-            A list of Struct DTO
+        Returns (list[Struct]):
+            A list of `Struct` :abbr:`DTO (Data Transfer Object)`.
         """
         s = self._get_struct_dto()
         f = self.cfg[self._FEATURE] if self._FEATURE in self.cfg else {}
@@ -204,56 +267,59 @@ class Sassy(Config):
             files_dto = [self._get_file_dto(f) for f in files]
 
             feats.append(_d.Struct(name=k, dirs=dirs, files=files_dto))
+
         return feats
 
     def create_structure(self):
-        """Create the clean architecture structure."""
-        payload = {self.cfg[self._APPS]: self.apps}
+        """Create a clean architecture structure."""
+        apps_keyword = {self.cfg[self._APPS]: self.apps}
 
         for struct in self._get_struct_dto():
             # create dir
             dirs = struct.dirs if struct.dirs else ['/']
 
             for dir_name in dirs:
-                path = self.apps_path
-                if not dir_name == '/':
-                    path = "/".join([self.apps_path, dir_name])
+                path = self.build_path(
+                    struct_name=struct.name, dir_name=dir_name)
 
                 self.create_dir(name=path)
 
                 # create file
                 for file in struct.files:
-                    file_name = file.replace_file_name(payload)
-                    content = file.replace_content(payload)
+                    file_name = file.replace_file_name(apps_keyword)
+                    content = file.replace_content(apps_keyword)
                     file_path = "/".join([path, file_name])
                     files = {file_path: content}
 
                     self.create_file(files=files)
 
     def create_feature(self, feature: str):
-        """Create the clean architecture features structure."""
-        payload = {self.cfg[self._FEAT]: feature}
+        """Create a clean architecture feature structure."""
+        feature = feature.lower().replace('-', '_')
+        feat_keyword = {self.cfg[self._FEAT]: feature}
 
         for struct in self._get_feature_structure_dto():
             for dir_name in struct.dirs:
-                path = "/".join([self.apps_path, dir_name])
+                path = self.build_path(
+                    struct_name=struct.name, dir_name=dir_name)
 
                 # create file
                 for file in struct.files:
-                    file_name = file.replace_file_name(payload)
-                    content = file.replace_content(payload)
+                    file_name = file.replace_file_name(feat_keyword)
+                    content = file.replace_content(feat_keyword)
                     file_path = "/".join([path, file_name])
                     files = {file_path: content}
 
                     self.create_file(files=files)
 
     def delete_feature(self, feature: str):
-        """Create the clean architecture features structure."""
+        """Delete a clean architecture feature structure."""
         payload = {self.cfg[self._FEAT]: feature}
 
         for struct in self._get_feature_structure_dto():
             for dir_name in struct.dirs:
-                path = "/".join([self.apps_path, dir_name])
+                path = self.build_path(
+                    struct_name=struct.name, dir_name=dir_name)
 
                 # create file
                 for file in struct.files:
@@ -267,15 +333,15 @@ class Sassy(Config):
             files: _t.Dict[str, _t.Any],
     ) -> _d.Result:
         """
-        Create file and add content.
+        Create a file and add content.
 
         Args:
-            files: The file name
+            files: A file name
 
         Returns:
-            Result DTO
-              - ok, Message DTO
-              - err, Message DTO
+            Result :abbr:`DTO (Data Transfer Object)`.
+              - ok, `Message` :abbr:`DTO (Data Transfer Object)`.
+              - err, `Message` :abbr:`DTO (Data Transfer Object)`.
         """
         result = _d.Result()
 
@@ -305,15 +371,15 @@ class Sassy(Config):
             file: str,
     ) -> _d.Result:
         """
-        Delete file.
+        Delete a file.
 
         Args:
             file: The file name
 
         Returns:
-            Result DTO
-              - ok, Message DTO
-              - err, Message DTO
+            Result :abbr:`DTO (Data Transfer Object)`.
+              - ok, `Message` :abbr:`DTO (Data Transfer Object)`.
+              - err, `Message` :abbr:`DTO (Data Transfer Object)`.
         """
         result = _d.Result()
 
@@ -335,15 +401,15 @@ class Sassy(Config):
     @printer(show='all', verbose=_VERBOSE)
     def create_dir(self, name: _t.Optional[str] = None) -> _d.Result:
         """
-        Create directory.
+        Create a directory.
 
         Args:
-            name: The directory name.
+            name: A directory name.
 
         Returns:
-            Result DTO
-              - ok, Message DTO
-              - err, Message DTO
+            Result :abbr:`DTO (Data Transfer Object)`.
+              - ok, `Message` :abbr:`DTO (Data Transfer Object)`.
+              - err, `Message` :abbr:`DTO (Data Transfer Object)`.
         """
         result = _d.Result()
 
