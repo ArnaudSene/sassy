@@ -23,6 +23,33 @@ class TestSassy:
     cwd = os.path.dirname(os.path.abspath(__file__))
     yaml_file = "/".join([cwd, 'sassy.yml'])
     message = _p.MessageService()
+    yaml_load = {
+        'apps': '__ABC__',
+        'feature': '__123__',
+        'structure': {
+            'apps': {
+                'files': ['fake_file'],
+                'dirs': ['apps_dir_1', 'apps_dir_2']
+            },
+            'other': {
+                'files': ['fake_file'],
+                'dirs': ['other_dir_1', 'other_dir_2']
+            },
+            'tests': {
+                'dirs': ['tests/tests_dir_1', 'tests/tests_dir_2']
+            },
+        },
+        'features': {
+            'apps': {
+                'files': ['__123__.py'],
+                'dirs': ['apps']
+            },
+            'tests': {
+                'files': ['test___123__.py'],
+                'dirs': ['tests']
+            }
+        }
+    }
 
     def test_result_dto_ok_or_err(self):
         """ok or err but not both together."""
@@ -113,7 +140,7 @@ class TestSassy:
         """load_config return a dict."""
         config = _a.Config(message=self.message)
         result_cfg = config.load_config(config_file=self.yaml_file)
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         assert result_cfg.ok == sassy.cfg
 
     def test_sassy_load_config_bad_format(self):
@@ -138,7 +165,7 @@ class TestSassy:
     ])
     def test_get_file_dto_ok(self, files, expected):
         """Get a File DTO."""
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         file: _d.File = sassy._get_file_dto(files=files)
         assert file.name == expected[0]
         assert file.content == expected[1]
@@ -152,84 +179,59 @@ class TestSassy:
     ])
     def test_get_file_dto_not_ok(self, idx, files):
         """Get None."""
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         file: _d.File = sassy._get_file_dto(files=files)
         assert file is None
 
     def test__get_struct_dto_not_ok(self):
         """Invalid yaml file or missing keyword. Result is []"""
-        mock_result = _d.Result()
-        mock_result.ok = {'kw': 'invalid'}
-        patcher = patch(f'{self.APPS_PATH}.Config.load_config')
+        yaml_load = {'kw': 'invalid'}
+        patcher = patch(f'{self.APPS_PATH}._yaml.load')
         mock_cfg = patcher.start()
-        mock_cfg.return_value = mock_result
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        mock_cfg.return_value = yaml_load
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         result = sassy._get_struct_dto()
         assert not result
         patcher.stop()
 
     def test__get_struct_dto_ok(self):
         """Valid yaml file. Result is list of Struct DTO"""
-        mock_result = _d.Result()
-        mock_result.ok = {
-            'structure': {
-                'root': {
-                    'files': ['fake_file'],
-                    'dirs': ['dir_1', 'dir_2']
-                }
-            }
-        }
-        patcher = patch(f'{self.APPS_PATH}.Config.load_config')
+        patcher = patch(f'{self.APPS_PATH}._yaml.load')
         mock_cfg = patcher.start()
-        mock_cfg.return_value = mock_result
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        mock_cfg.return_value = self.yaml_load
+
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         result = sassy._get_struct_dto()
-        assert result[0].name == 'root'
-        assert result[0].dirs == ['dir_1', 'dir_2']
+        assert result[0].name == 'apps'
+        assert result[0].dirs == ['apps_dir_1', 'apps_dir_2']
         assert result[0].files == [_d.File(name='fake_file')]
         patcher.stop()
 
     def test__get_feature_structure_dto_not_ok(self):
         """Invalid yaml file or missing keyword. Result is []"""
-        mock_result = _d.Result()
-        mock_result.ok = {'kw': 'invalid'}
-        patcher = patch(f'{self.APPS_PATH}.Config.load_config')
+        yaml_load = {'kw': 'invalid'}
+        patcher = patch(f'{self.APPS_PATH}._yaml.load')
         mock_cfg = patcher.start()
-        mock_cfg.return_value = mock_result
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        mock_cfg.return_value = yaml_load
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         result = sassy._get_feature_structure_dto()
         assert not result
         patcher.stop()
 
     def test__get_feature_structure_dto_ok(self):
         """Valid yaml file. Result is list of Struct DTO"""
-        mock_result = _d.Result()
-        mock_result.ok = {
-            'structure': {
-                'root': {
-                    'files': ['fake_file'],
-                    'dirs': ['dir_1', 'dir_2']
-                }
-            },
-            'features': {
-                'apps': {
-                    'files': ['fake_file.py'],
-                    'dirs': ['root']
-                }
-            }
-        }
-        patcher = patch(f'{self.APPS_PATH}.Config.load_config')
+        patcher = patch(f'{self.APPS_PATH}._yaml.load')
         mock_cfg = patcher.start()
-        mock_cfg.return_value = mock_result
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        mock_cfg.return_value = self.yaml_load
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         result = sassy._get_feature_structure_dto()
         assert result[0].name == 'apps'
-        assert result[0].dirs == ['dir_1', 'dir_2']
-        assert result[0].files == [_d.File(name='fake_file.py')]
+        assert result[0].dirs == ['apps_dir_1', 'apps_dir_2']
+        assert result[0].files == [_d.File(name='__123__.py', content='')]
         patcher.stop()
 
     def tests_create_dir_already_exist(self):
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         sassy.update = False
         isdir_patcher = patch(f'{self.APPS_PATH}.os.path.isdir')
         mock_isdir = isdir_patcher.start()
@@ -243,7 +245,7 @@ class TestSassy:
         assert r.err.code == 201
 
     def tests_create_dir_success(self):
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         sassy.update = False
         isdir_patcher = patch(f'{self.APPS_PATH}.os.path.isdir')
         mock_isdir = isdir_patcher.start()
@@ -257,7 +259,7 @@ class TestSassy:
         assert r.ok.code == 102
 
     def tests_create_dir_success_already_exist(self):
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         sassy.update = True
         isdir_patcher = patch(f'{self.APPS_PATH}.os.path.isdir')
         mock_isdir = isdir_patcher.start()
@@ -271,7 +273,7 @@ class TestSassy:
         assert r.ok.code == 102
 
     def tests_create_dir_failed_with_os_error_exception(self):
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         sassy.update = True
         isdir_patcher = patch(f'{self.APPS_PATH}.os.path.isdir')
         mock_isdir = isdir_patcher.start()
@@ -286,7 +288,7 @@ class TestSassy:
         assert r.err.code == 302
 
     def test_create_dir_success_with_params(self):
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         sassy.update = False
         isdir_patcher = patch(f'{self.APPS_PATH}.os.path.isdir')
         mock_isdir = isdir_patcher.start()
@@ -297,7 +299,7 @@ class TestSassy:
         isdir_patcher.stop()
 
     def test_create_dir_success_without_params(self):
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         sassy.update = False
         isdir_patcher = patch(f'{self.APPS_PATH}.os.path.isdir')
         mock_isdir = isdir_patcher.start()
@@ -308,7 +310,7 @@ class TestSassy:
 
     def test_create_file_already_exist(self):
         """File is already exist"""
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         fake_file = 'fake_file.py'
         content = "Message to write on file to be written"
         patcher = patch(f'{self.APPS_PATH}.os.path.isfile')
@@ -320,7 +322,7 @@ class TestSassy:
 
     def test_create_file_success_ok(self):
         """Write file ok"""
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         fake_file = 'fake/file/path/fake_file.py'
         content = "Message to write on file to be written"
 
@@ -334,7 +336,7 @@ class TestSassy:
 
     def test_create_file_failed_raise_exception(self):
         """Raise exception"""
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         fake_file = 'fake_file.py'
         content = "Message to write on file to be written"
         patcher = patch(f'{self.APPS_PATH}.open')
@@ -345,7 +347,7 @@ class TestSassy:
         patcher.stop()
 
     def tests_delete_file_success(self):
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         sassy.update = False
         isfile_patcher = patch(f'{self.APPS_PATH}.os.path.isfile')
         mock_isfile = isfile_patcher.start()
@@ -360,7 +362,7 @@ class TestSassy:
         assert r.ok.code == 106
 
     def tests_delete_file_raise_exception(self):
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         sassy.update = False
         isfile_patcher = patch(f'{self.APPS_PATH}.os.path.isfile')
         mock_isfile = isfile_patcher.start()
@@ -376,7 +378,7 @@ class TestSassy:
         assert r.err.code == 303
 
     def tests_delete_file_file_not_exist(self):
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         sassy.update = False
         isfile_patcher = patch(f'{self.APPS_PATH}.os.path.isfile')
         mock_isfile = isfile_patcher.start()
@@ -409,30 +411,14 @@ class TestSassy:
         assert file.replace_content(payload) == expected
 
     def test_create_structure_ok(self):
-        mock_result = _d.Result()
-        mock_result.ok = {
-            'apps': '__ABC__',
-            'feature': '__123__',
-            'structure': {
-                'root': {
-                    'files': ['fake_file'],
-                    'dirs': ['dir_1', 'dir_2']
-                }
-            },
-            'features': {
-                'apps': {
-                    'files': ['fake_file.py'],
-                    'dirs': ['root']
-                }
-            }
-        }
-        patcher = patch(f'{self.APPS_PATH}.Config.load_config')
+        patcher = patch(f'{self.APPS_PATH}._yaml.load')
         mock_cfg = patcher.start()
-        mock_cfg.return_value = mock_result
+        mock_cfg.return_value = self.yaml_load
 
         result = _d.Result()
         result.ok = 'this is ok'
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
+
         dir_patcher = patch(f'{self.APPS_PATH}.Sassy.create_dir')
         file_patcher = patch(f'{self.APPS_PATH}.Sassy.create_file')
         mock_create_dir = dir_patcher.start()
@@ -442,16 +428,30 @@ class TestSassy:
 
         sassy.create_structure()
         dir_calls = [
-            call(name='/Volumes/SSD_Data/halia/Sassy/test_sassy/dir_1'),
-            call(name='/Volumes/SSD_Data/halia/Sassy/test_sassy/dir_2')
+            call(name='/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
+                      'fake_sassy/apps_dir_1'),
+            call(name='/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
+                      'fake_sassy/apps_dir_2'),
+            call(name='/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
+                      'fake_sassy/other_dir_1'),
+            call(name='/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
+                      'fake_sassy/other_dir_2'),
+            call(name='/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
+                      'tests/tests_dir_1'),
+            call(name='/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
+                      'tests/tests_dir_2'),
         ]
         mock_create_dir.assert_has_calls(dir_calls, any_order=True)
 
         file_calls = [
-            call(files={'/Volumes/SSD_Data/halia/Sassy/test_sassy/dir_1/'
-                        'fake_file': ''}),
-            call(files={'/Volumes/SSD_Data/halia/Sassy/test_sassy/dir_2/'
-                        'fake_file': ''})
+            call(files={'/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
+                        'fake_sassy/apps_dir_1/fake_file': ''}),
+            call(files={'/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
+                        'fake_sassy/apps_dir_2/fake_file': ''}),
+            call(files={'/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
+                        'fake_sassy/other_dir_1/fake_file': ''}),
+            call(files={'/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
+                        'fake_sassy/other_dir_2/fake_file': ''})
         ]
         mock_create_file.assert_has_calls(file_calls, any_order=True)
 
@@ -460,88 +460,61 @@ class TestSassy:
         patcher.stop()
 
     def test_create_feature_ok(self):
-        mock_result = _d.Result()
-        mock_result.ok = {
-            'apps': '__ABC__',
-            'feature': '__123__',
-            'structure': {
-                'root': {
-                    'files': ['fake_file'],
-                    'dirs': ['dir_1', 'dir_2']
-                }
-            },
-            'features': {
-                'apps': {
-                    'files': ['fake_file.py'],
-                    'dirs': ['root']
-                }
-            }
-        }
-        patcher = patch(f'{self.APPS_PATH}.Config.load_config')
+        patcher = patch(f'{self.APPS_PATH}._yaml.load')
         mock_cfg = patcher.start()
-        mock_cfg.return_value = mock_result
+        mock_cfg.return_value = self.yaml_load
 
         result = _d.Result()
         result.ok = 'this is ok'
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         file_patcher = patch(f'{self.APPS_PATH}.Sassy.create_file')
 
         mock_create_file = file_patcher.start()
         mock_create_file.return_value = result
-
         sassy.create_feature(feature='fake_feature')
 
         file_calls = [
             call(files={
-                '/Volumes/SSD_Data/halia/Sassy/test_sassy/dir_1/fake_file.py':
-                    ''}),
+                '/Volumes/SSD_Data/halia/Sassy/fake_sassy/fake_sassy'
+                '/apps_dir_1/fake_feature.py': ''}),
             call(files={
-                '/Volumes/SSD_Data/halia/Sassy/test_sassy/dir_2/fake_file.py':
-                    ''})
+                '/Volumes/SSD_Data/halia/Sassy/fake_sassy/fake_sassy'
+                '/apps_dir_2/fake_feature.py': ''}),
+            call(files={
+                '/Volumes/SSD_Data/halia/Sassy/fake_sassy/tests'
+                '/tests_dir_1/test_fake_feature.py': ''}),
+            call(files={
+                '/Volumes/SSD_Data/halia/Sassy/fake_sassy/tests'
+                '/tests_dir_2/test_fake_feature.py': ''})
         ]
+
         mock_create_file.assert_has_calls(file_calls, any_order=True)
 
         file_patcher.stop()
         patcher.stop()
 
     def test_delete_feature_ok(self):
-        mock_result = _d.Result()
-        mock_result.ok = {
-            'apps': '__ABC__',
-            'feature': '__123__',
-            'structure': {
-                'root': {
-                    'files': ['fake_file'],
-                    'dirs': ['dir_1', 'dir_2']
-                }
-            },
-            'features': {
-                'apps': {
-                    'files': ['fake_file.py'],
-                    'dirs': ['root']
-                }
-            }
-        }
-        patcher = patch(f'{self.APPS_PATH}.Config.load_config')
+        patcher = patch(f'{self.APPS_PATH}._yaml.load')
         mock_cfg = patcher.start()
-        mock_cfg.return_value = mock_result
-
+        mock_cfg.return_value = self.yaml_load
         result = _d.Result()
         result.ok = 'this is ok'
-        sassy = _a.Sassy(apps='test_sassy', message=self.message)
+        sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         file_patcher = patch(f'{self.APPS_PATH}.Sassy.delete_file')
-
         mock_delete_file = file_patcher.start()
         mock_delete_file.return_value = result
-
         sassy.delete_feature(feature='fake_feature')
 
         file_calls = [
-            call(file=
-                '/Volumes/SSD_Data/halia/Sassy/test_sassy/dir_1/fake_file.py'),
-            call(file=
-                '/Volumes/SSD_Data/halia/Sassy/test_sassy/dir_2/fake_file.py')
-        ]
+            call(file='/Volumes/SSD_Data/halia/Sassy/fake_sassy/fake_sassy'
+                      '/apps_dir_1/fake_feature.py'),
+            call(file='/Volumes/SSD_Data/halia/Sassy/fake_sassy/fake_sassy'
+                      '/apps_dir_2/fake_feature.py'),
+            call(file='/Volumes/SSD_Data/halia/Sassy/fake_sassy/tests'
+                      '/tests_dir_1/test_fake_feature.py'),
+            call(file='/Volumes/SSD_Data/halia/Sassy/fake_sassy/tests'
+                      '/tests_dir_2/test_fake_feature.py')]
+
         mock_delete_file.assert_has_calls(file_calls, any_order=True)
 
         file_patcher.stop()
@@ -620,4 +593,4 @@ class TestSassy:
     #         severity=sev
     #     )
     #     message.text = 'A fake message'
-    #     _a.Logger.log(message=message)
+    #     _a.Logger().show(message=message)

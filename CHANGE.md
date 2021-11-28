@@ -1,3 +1,8 @@
+# 0.0.1.dev7
+
+## Add doc with sphinx
+
+---
 # 0.0.1.dev6
 
 ## Remove a feature
