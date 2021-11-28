@@ -12,7 +12,7 @@ from _sassy.d_sassy import Message
 
 
 class MessagesInterfaces(_abc.ABC):
-    """Message Interface."""
+    """Message abstract class (Interface)."""
 
     @_abc.abstractmethod
     def msg(self, name: str, extra: _t.Optional[str] = None) -> Message:
@@ -20,10 +20,10 @@ class MessagesInterfaces(_abc.ABC):
         Read a message.
 
         Args:
-            name: The message name.
-            extra: More information.
+            name (str): The message name.
+            extra (Optional[str]): Extra information.
 
-        Returns:
-            A Message DTO
+        Returns (Message):
+            A ``Message`` :abbr:`DTO (Data Transfer Object)`.
         """
         raise NotImplementedError

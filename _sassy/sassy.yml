@@ -12,12 +12,16 @@ structure:
       - VERSION
       - AUTHORS.md
 
+  docs:
+    dirs:
+      - docs
+
   system:
     dirs:
       - configs
       - core
       - scripts
-      - tests
+
     files:
       - __init__.py: '"""Init for __APPS__."""'
 
