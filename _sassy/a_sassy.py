@@ -315,6 +315,7 @@ class Sassy(Config):
 
     def delete_feature(self, feature: str):
         """Delete a clean architecture feature structure."""
+
         payload = {self.cfg[self._FEAT]: feature}
 
         for struct in self._get_feature_structure_dto():

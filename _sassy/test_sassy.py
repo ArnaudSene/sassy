@@ -497,15 +497,12 @@ class TestSassy:
         patcher = patch(f'{self.APPS_PATH}._yaml.load')
         mock_cfg = patcher.start()
         mock_cfg.return_value = self.yaml_load
-
         result = _d.Result()
         result.ok = 'this is ok'
         sassy = _a.Sassy(apps='fake_sassy', message=self.message)
         file_patcher = patch(f'{self.APPS_PATH}.Sassy.delete_file')
-
         mock_delete_file = file_patcher.start()
         mock_delete_file.return_value = result
-
         sassy.delete_feature(feature='fake_feature')
 
         file_calls = [
@@ -517,6 +514,7 @@ class TestSassy:
                       '/tests_dir_1/test_fake_feature.py'),
             call(file='/Volumes/SSD_Data/halia/Sassy/fake_sassy/tests'
                       '/tests_dir_2/test_fake_feature.py')]
+
         mock_delete_file.assert_has_calls(file_calls, any_order=True)
 
         file_patcher.stop()
@@ -582,17 +580,17 @@ class TestSassy:
 
         assert isinstance(foo(), _d.Result)
 
-    @pytest.mark.parametrize('idx, sev', [
-        (0, 'DEBUG'),
-        (0, 'INFO'),
-        (0, 'WARNING'),
-        (0, 'ERROR'),
-        (0, 'CRITICAL'),
-    ])
-    def test_show_logging(self, idx, sev):
-        message = _d.Message(
-            code=100,
-            severity=sev
-        )
-        message.text = 'A fake message'
-        _a.Logger().show(message=message)
+    # @pytest.mark.parametrize('idx, sev', [
+    #     (0, 'DEBUG'),
+    #     (0, 'INFO'),
+    #     (0, 'WARNING'),
+    #     (0, 'ERROR'),
+    #     (0, 'CRITICAL'),
+    # ])
+    # def test_show_logging(self, idx, sev):
+    #     message = _d.Message(
+    #         code=100,
+    #         severity=sev
+    #     )
+    #     message.text = 'A fake message'
+    #     _a.Logger().show(message=message)
