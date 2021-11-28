@@ -18,10 +18,10 @@ _PATH = os.path.dirname(os.path.abspath(__file__))
 
 
 class MessageService(MessagesInterfaces):
-    """Message Service."""
+    """Message Service class."""
 
     def __init__(self):
-        """Init."""
+        """Init instance."""
         self.messages: _t.Optional[_t.Dict[str, _t.Any]] = None
         self.message_file = "/".join([_PATH, _MESSAGES_FILE])
         self.load_messages()
@@ -41,11 +41,11 @@ class MessageService(MessagesInterfaces):
         Read a message.
 
         Args:
-            name: The message name.
-            extra: More information.
+            name (str): The message name.
+            extra (Optional[str]): Extra information.
 
-        Returns:
-            A Message DTO
+        Returns (Message):
+            A ``Message`` :abbr:`DTO (Data Transfer Object)`.
         """
         if name not in self.messages:
             msg = self.messages['error_msg']

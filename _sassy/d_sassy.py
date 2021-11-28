@@ -12,13 +12,20 @@ import enum as _enum
 
 @_dt.dataclass
 class Result:
-    """Result DTO."""
+    """Result :abbr:`DTO (Data Transfer Object)`."""
 
     _ok: _t.Optional[str] = None
     _err: _t.Optional[str] = None
 
     def __str__(self) -> str:
-        """Rewrite Result as a string."""
+        """
+        Rewrite ``Result`` as a string.
+
+        Used with ``str(instance)`` or ``format`` function.
+
+        Returns (str):
+            ok | err as a string.
+        """
         if self.ok:
             return f'{self.ok}'
         else:
@@ -29,8 +36,8 @@ class Result:
         """
         Get ok.
 
-        Returns:
-            The ok result.
+        Returns (Any):
+            ok result.
         """
         return self._ok
 
@@ -40,7 +47,7 @@ class Result:
         Set ok.
 
         Args:
-            val: Any value
+            val (Any): A value.
         """
         if val:
             self._ok = val
@@ -51,8 +58,8 @@ class Result:
         """
         Get error.
 
-        Returns:
-            Any error
+        Returns (Any):
+            An error.
         """
         return self._err
 
@@ -62,7 +69,7 @@ class Result:
         Set error.
 
         Args:
-            val: Any value
+            val (Any): A value.
         """
         if val:
             self._err = val
@@ -71,7 +78,7 @@ class Result:
 
 @_dt.dataclass
 class Message:
-    """Message DTO."""
+    """``Message`` :abbr:`DTO (Data Transfer Object)`."""
 
     code: int
     severity: str
@@ -88,17 +95,36 @@ class Message:
         CRITICAL = 50
 
     def __repr__(self) -> str:
-        """Message machine-readable."""
+        """
+        ``Message`` machine-readable.
+
+        Use with ``repr(instance)`` function.
+
+        Returns (str):
+            Message(code: <code>, severity: <severity>, text: <text>)
+        """
         return f"{self.__class__.__name__}" \
                f"(code: {self.code}, severity: {self.severity}, " \
                f"text: {self.text})"
 
     def __str__(self) -> str:
-        """Message human-readable."""
+        """
+        ``Message`` human-readable.
+
+        Use with ``str(instance)`` or ``format`` functions.
+
+        Returns (str):
+            (<code>, <severity>, <text>)
+        """
         return f"({self.code},{self.severity},{self.text})"
 
     def as_dict(self) -> _t.Dict[str, _t.Any]:
-        """Convert Message as a dict."""
+        """
+        Convert ``Message`` into a dict.
+
+        Returns (dict[str, Any]):
+            ``Message`` as a dict.
+        """
         return {
             "code": self.code,
             "severity": self.severity,
@@ -107,19 +133,34 @@ class Message:
 
     @property
     def text(self) -> str:
-        """Get text value."""
+        """
+        Get text value.
+
+        Returns (str):
+            A text.
+        """
         return self._text
 
     @text.setter
     def text(self, text: str):
-        """Set text value."""
+        """
+        Set text value.
+
+        Args:
+            text (str): A text.
+        """
         self._text = text.replace("'{}' ", "")
 
         if self.extra:
             self._text = text.format(self.extra)
 
     def level(self):
-        """Get the severity level."""
+        """
+        Get the severity level.
+
+        Returns (str):
+            The level name.
+        """
         if self.severity in self.SeverityLevel.__members__:
             return self.SeverityLevel[self.severity].value
         return self.SeverityLevel['INFO'].value
@@ -127,7 +168,7 @@ class Message:
 
 @_dt.dataclass
 class File:
-    """File DTO."""
+    """``File`` :abbr:`DTO (Data Transfer Object)`."""
 
     name: str
     content: _t.Optional[str] = ''
@@ -137,7 +178,7 @@ class File:
             payload: _t.Dict[str, _t.Any]
     ) -> str:
         """
-        Rename the content file.
+        Rename a content file.
 
         Args:
             payload: A key, value that represent what needs to be replaced
@@ -145,7 +186,7 @@ class File:
                     key: The key that needs to be replaced
                     value: The value that will be apply
 
-        Returns:
+        Returns (str):
             The content with string replaced.
         """
         if self.content:
@@ -162,13 +203,13 @@ class File:
         Replace the file name.
 
         Args:
-            payload: A key, value that represent what needs to be replaced
+            payload: A key, value that represent what needs to be replaced \
                     and by which value.
-                    key: The key that needs to be replaced
-                    value: The value that will be apply
+                    **key**: The key that needs to be replaced.
+                    **value**: The value that will be apply.
 
-        Returns:
-            The file name with string replaced.
+        Returns (str):
+            The file name.
         """
         if self.name:
             for k, v in payload.items():
@@ -179,7 +220,7 @@ class File:
 
 @_dt.dataclass
 class Struct:
-    """Struct DTO."""
+    """Struct :abbr:`DTO (Data Transfer Object)`."""
 
     name: str
     dirs: _t.List[_t.Any]

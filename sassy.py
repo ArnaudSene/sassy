@@ -13,10 +13,11 @@ from _sassy import a_sassy as _a, p_sassy as _p  # noqa E402
 
 
 class Parser:
+    """Parser class."""
 
     def __init__(self):
         """Init."""
-        self.parser = _parser = argparse.ArgumentParser(
+        self.parser = argparse.ArgumentParser(
             description='Manage Clean Architecture application.')
 
         self.parser.add_argument(
@@ -40,6 +41,7 @@ class Parser:
         return args
 
     def help(self):
+        """Show help."""
         self.parser.print_help()
         fbn = os.path.basename(__file__)
         print(f"\nexample:\n"
