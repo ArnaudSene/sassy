@@ -432,14 +432,14 @@ class TestSassy:
                       'fake_sassy/apps_dir_1'),
             call(name='/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
                       'fake_sassy/apps_dir_2'),
-            call(name=f'/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
-                      f'fake_sassy/other_dir_1'),
-            call(name=f'/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
-                      f'fake_sassy/other_dir_2'),
-            call(name=f'/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
-                      f'tests/tests_dir_1'),
-            call(name=f'/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
-                      f'tests/tests_dir_2'),
+            call(name='/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
+                      'fake_sassy/other_dir_1'),
+            call(name='/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
+                      'fake_sassy/other_dir_2'),
+            call(name='/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
+                      'tests/tests_dir_1'),
+            call(name='/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
+                      'tests/tests_dir_2'),
         ]
         mock_create_dir.assert_has_calls(dir_calls, any_order=True)
 

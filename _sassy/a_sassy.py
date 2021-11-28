@@ -49,7 +49,8 @@ class Logger:
         The attribute ``Message.text`` provide the even message.
 
         Args:
-            message (Message): A ``Message`` :abbr:`DTO (Data Transfer Object)`.
+            message (Message): A ``Message`` :abbr:`DTO (Data Transfer
+            Object)`.
 
         """
         if message.level() == 10:
@@ -393,7 +394,8 @@ class Sassy(Config):
             result.ok = self.message.msg(name='file_delete_ok', extra=file)
 
         except Exception as exc:
-            result.err = self.message.msg(name='file_delete_failed', extra=file)
+            result.err = self.message.msg(
+                name='file_delete_failed', extra=file)
             result.err.text += f" {exc}"
 
         return result
