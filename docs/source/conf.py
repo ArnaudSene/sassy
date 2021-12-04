@@ -16,7 +16,7 @@
 import pathlib
 import sys
 sys.path.insert(0, pathlib.Path(__file__).parents[2].resolve().as_posix())
-
+print(pathlib.Path(__file__).parents[2])
 # -- Project information -----------------------------------------------------
 
 project = 'sassy'
@@ -24,7 +24,7 @@ copyright = '2021, Arnaud SENE & Karol KOZUBAL'
 author = 'Arnaud SENE & Karol KOZUBAL'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1'
+release = '0.0.2'
 
 
 # -- General configuration ---------------------------------------------------

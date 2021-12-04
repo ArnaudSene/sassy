@@ -1,3 +1,18 @@
+# 0.0.2
+
+## Git repo
+
+- Add git repo at structure creation
+
+## MessageLogger
+
+- Log messages through a decorator
+
+## Documentation
+
+- Update documentation
+
+---
 # 0.0.1.dev7
 
 ## Add doc with sphinx

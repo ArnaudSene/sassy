@@ -15,12 +15,12 @@ structure:
   docs:
     dirs:
       - docs
+      - scripts
 
   system:
     dirs:
       - configs
       - core
-      - scripts
 
     files:
       - __init__.py: '"""Init for __APPS__."""'
