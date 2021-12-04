@@ -34,6 +34,10 @@ file_delete_ok:
   text: File '{}' successfully deleted!
   code: 106
 
+repo_init_ok:
+  text: Repository '{}' successfully initialized!
+  code: 107
+
 # WARNING
 file_exists:
   text: File '{}' already exist!
@@ -67,6 +71,10 @@ dir_create_failed:
 file_delete_failed:
   text: Deletion of file '{}' failed!!
   code: 303
+
+repo_init_failed:
+  text: Repository '{}' init failed!
+  code: 304
 
 # FATAL
 bad_yaml_format:

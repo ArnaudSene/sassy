@@ -6,111 +6,62 @@ Contact:
   Karol KOZUBAL, karol.lozubal@halia.ca
 """
 import functools
-import logging
 import os
 import typing as _t
 
 import yaml as _yaml
-from colorlog import ColoredFormatter
 from yaml.parser import ParserError
 
-from _sassy import d_sassy as _d, i_sassy as _i
+from _sassy import logger_provider
+from _sassy.d_sassy import Result, Struct, File, Message
+from _sassy.i_sassy import LoggerInterface, RepoInterface, MessagesInterface
 
-_VERBOSE = os.environ['VERBOSE'] if 'VERBOSE' in os.environ else None
 
+class MessageLogger:
+    """Log messages as decorator."""
 
-class Logger:
-    """Event logger class."""
-
-    LOG_LEVEL = logging.DEBUG
-    LOGFORMAT = "%(log_color)s%(asctime)s %(levelname)-8s%(reset)s " \
-                "%(log_color)s%(message)s%(reset)s"
-    logging.root.setLevel(LOG_LEVEL)
-    formatter = ColoredFormatter(LOGFORMAT)
-    stream = logging.StreamHandler()
-    stream.setLevel(LOG_LEVEL)
-    stream.setFormatter(formatter)
-    log = logging.getLogger('pythonConfig')
-    log.setLevel(LOG_LEVEL)
-    log.addHandler(stream)
-
-    def show(self, message: _d.Message):
+    def __init__(
+            self,
+            logger: LoggerInterface,
+            show: str = 'all'
+    ):
         """
-        Log the event based on ``Message`` class.
-
-        The method ``Message.level()`` returns the event level as follow:
-
-            - 10 debug
-            - 20 info
-            - 30 warning
-            - 40 error
-            - 50 critical
-
-        The attribute ``Message.text`` provide the even message.
+        Init the ``MessageLogger``.
 
         Args:
-            message (Message): A ``Message`` :abbr:`DTO (Data Transfer
-            Object)`.
-
+            logger: The logger provider.
+            show: Choose what to log. Choices are: [ok, err, all] default: all
         """
-        if message.level() == 10:
-            self.log.debug(message.text)
-        elif message.level() == 20:
-            self.log.info(message.text)
-        elif message.level() == 30:
-            self.log.warning(message.text)
-        elif message.level() == 40:
-            self.log.error(message.text)
-        elif message.level() == 50:
-            self.log.critical(message.text)
+        self.logger = logger
+        self.show = show
 
+    def __call__(self, func):
+        """
+        Log messages.
 
-def printer(_func=None, *, verbose=None, show=None):
-    """
-    Event logging system as a ``@decorator``.
+        Args:
+            func: The function decorated.
 
-    This decorator aims to choose what kind of data to log.
-
-    It is based on the ``Result`` :abbr:`DTO (Data Transfer Object)` \
-    which provide 2 attributes:
-        - Result.ok
-        - Result.err
-
-    When ``Result.ok`` has a value then ``Result.err`` is set to None \
-    and vice versa.
-
-    Args:
-        _func (function): A function to decorate.
-        verbose (str): Activate the logger. Mainly used for Unit tests.
-        show (str): What to show.
-            Choices: all | ok | err.
-
-    Returns (function):
-        The function decorated.
-    """
-
-    def inner(func):
+        Returns (func):
+            the function decorated.
+        """
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            r = func(*args, **kwargs)
-            logger = Logger()
+            result: Result = func(*args, **kwargs)
 
-            if verbose and show == 'err' and r.err:
-                logger.show(message=r.err)
-            elif verbose and show == 'ok' and r.ok:
-                logger.show(message=r.ok)
-            elif verbose and show == 'all':
-                if r.ok:
-                    logger.show(message=r.ok)
-                else:
-                    logger.show(message=r.err)
-            return r
+            if not isinstance(result, Result):
+                return result
+
+            if isinstance(result.ok, Message) \
+                    and self.show in ['ok', 'all']:
+                self.logger.show(message=result.ok)
+            elif isinstance(result.err, Message) \
+                    and self.show in ['err', 'all']:
+                self.logger.show(message=result.err)
+
+            return result
+
         return wrapper
-
-    if _func is None:
-        return inner
-    else:
-        return inner(_func)
 
 
 class Config:
@@ -118,14 +69,14 @@ class Config:
 
     def __init__(
             self,
-            message: _i.MessagesInterfaces
+            message: MessagesInterface
     ):
         """Init ``Config`` instance."""
         self.message = message
         self.cfg = {}
 
-    @printer(show='err', verbose=_VERBOSE)
-    def load_config(self, config_file) -> _d.Result:
+    @MessageLogger(logger_provider, show='err')
+    def load_config(self, config_file) -> Result:
         """
         Load the configuration dataset.
 
@@ -135,7 +86,7 @@ class Config:
               - err, Message :abbr:`DTO (Data Transfer Object)`.
 
         """
-        result = _d.Result()
+        result = Result()
 
         try:
             with open(config_file) as file:
@@ -171,7 +122,8 @@ class Sassy(Config):
     def __init__(
             self,
             apps: str,
-            message: _i.MessagesInterfaces
+            message: MessagesInterface,
+            repo: RepoInterface
     ):
         """
         Init ``Sassy`` instance.
@@ -186,6 +138,7 @@ class Sassy(Config):
         self.config_file = "/".join([self._PATH, self._CONFIG_FILE])
         self.update: bool = False
         self.message = message
+        self.repo = repo
         super().__init__(message=message)
         super().load_config(config_file=self.config_file)
 
@@ -211,7 +164,7 @@ class Sassy(Config):
     @staticmethod
     def _get_file_dto(
             files: _t.Union[_t.Dict[str, _t.Any], str]
-    ) -> _t.Optional[_d.File]:
+    ) -> _t.Optional[File]:
         """
         Get a ``File`` :abbr:`DTO (Data Transfer Object)`.
 
@@ -222,12 +175,12 @@ class Sassy(Config):
             A ``File`` :abbr:`DTO (Data Transfer Object)`.
         """
         if isinstance(files, str):
-            return _d.File(name=files)
+            return File(name=files)
         elif isinstance(files, dict):
             for f, c in files.items():
-                return _d.File(name=f, content=c)
+                return File(name=f, content=c)
 
-    def _get_struct_dto(self) -> _t.List[_d.Struct]:
+    def _get_struct_dto(self) -> _t.List[Struct]:
         """
         Get the structure dataset.
 
@@ -242,10 +195,10 @@ class Sassy(Config):
             files = v[self._FILES] if self._FILES in v else []
             files_dto = [self._get_file_dto(f) for f in files]
 
-            dto.append(_d.Struct(name=k, dirs=dirs, files=files_dto))
+            dto.append(Struct(name=k, dirs=dirs, files=files_dto))
         return dto
 
-    def _get_feature_structure_dto(self) -> _t.List[_d.Struct]:
+    def _get_feature_structure_dto(self) -> _t.List[Struct]:
         """
             Get the feature structure dataset.
 
@@ -267,23 +220,38 @@ class Sassy(Config):
             files = v[self._FILES] if self._FILES in v else []
             files_dto = [self._get_file_dto(f) for f in files]
 
-            feats.append(_d.Struct(name=k, dirs=dirs, files=files_dto))
+            feats.append(Struct(name=k, dirs=dirs, files=files_dto))
 
         return feats
 
-    def create_structure(self):
-        """Create a clean architecture structure."""
+    def create_structure(self) -> Result:
+        """
+        Create a clean architecture structure.
+
+        Returns (List[str]):
+            The list of directories created.
+        """
         apps_keyword = {self.cfg[self._APPS]: self.apps}
+        repo_name = None
+        dirs_and_files = []
 
         for struct in self._get_struct_dto():
             # create dir
-            dirs = struct.dirs if struct.dirs else ['/']
+            dirs = struct.dirs if struct.dirs else ['']
 
             for dir_name in dirs:
                 path = self.build_path(
                     struct_name=struct.name, dir_name=dir_name)
 
-                self.create_dir(name=path)
+                result: Result = self.create_dir(name=path)
+                if result.err:
+                    return result
+
+                # repo_name = path if not repo_name else repo_name
+                if not repo_name:
+                    repo_name = path
+                else:
+                    dirs_and_files.append(path)
 
                 # create file
                 for file in struct.files:
@@ -291,8 +259,13 @@ class Sassy(Config):
                     content = file.replace_content(apps_keyword)
                     file_path = "/".join([path, file_name])
                     files = {file_path: content}
+                    dirs_and_files.append(file_path)
 
                     self.create_file(files=files)
+
+        if repo_name:
+            repo_apps = InitRepo(repo=self.repo, message=self.message)
+            repo_apps(repo_name=repo_name, items=dirs_and_files)
 
     def create_feature(self, feature: str):
         """Create a clean architecture feature structure."""
@@ -314,8 +287,15 @@ class Sassy(Config):
                     self.create_file(files=files)
 
     def delete_feature(self, feature: str):
-        """Delete a clean architecture feature structure."""
+        """
+        Delete a clean architecture feature structure.
 
+        Args:
+            feature (str): A feature name.
+
+        Returns:
+            None
+        """
         payload = {self.cfg[self._FEAT]: feature}
 
         for struct in self._get_feature_structure_dto():
@@ -329,11 +309,11 @@ class Sassy(Config):
                     file_path = "/".join([path, file_name])
                     self.delete_file(file=file_path)
 
-    @printer(show='all', verbose=_VERBOSE)
+    @MessageLogger(logger=logger_provider, show='all')
     def create_file(
             self,
             files: _t.Dict[str, _t.Any],
-    ) -> _d.Result:
+    ) -> Result:
         """
         Create a file and add content.
 
@@ -345,7 +325,7 @@ class Sassy(Config):
               - ok, `Message` :abbr:`DTO (Data Transfer Object)`.
               - err, `Message` :abbr:`DTO (Data Transfer Object)`.
         """
-        result = _d.Result()
+        result = Result()
 
         for file, content in files.items():
 
@@ -367,11 +347,11 @@ class Sassy(Config):
 
             return result
 
-    @printer(show='all', verbose=_VERBOSE)
+    @MessageLogger(logger=logger_provider, show='all')
     def delete_file(
             self,
             file: str,
-    ) -> _d.Result:
+    ) -> Result:
         """
         Delete a file.
 
@@ -383,7 +363,7 @@ class Sassy(Config):
               - ok, `Message` :abbr:`DTO (Data Transfer Object)`.
               - err, `Message` :abbr:`DTO (Data Transfer Object)`.
         """
-        result = _d.Result()
+        result = Result()
 
         if not os.path.isfile(file):
             result.err = self.message.msg(name='file_not_exist', extra=file)
@@ -401,8 +381,8 @@ class Sassy(Config):
 
         return result
 
-    @printer(show='all', verbose=_VERBOSE)
-    def create_dir(self, name: _t.Optional[str] = None) -> _d.Result:
+    @MessageLogger(logger=logger_provider, show='all')
+    def create_dir(self, name: _t.Optional[str] = None) -> Result:
         """
         Create a directory.
 
@@ -414,7 +394,7 @@ class Sassy(Config):
               - ok, `Message` :abbr:`DTO (Data Transfer Object)`.
               - err, `Message` :abbr:`DTO (Data Transfer Object)`.
         """
-        result = _d.Result()
+        result = Result()
 
         if not name:
             name = self.apps_path
@@ -429,5 +409,48 @@ class Sassy(Config):
             result.err = self.message.msg(name='dir_create_failed', extra=name)
         else:
             result.ok = self.message.msg(name='dir_create_ok', extra=name)
+
+        return result
+
+
+class InitRepo:
+    """InitRepo class application."""
+
+    def __init__(
+            self,
+            repo: RepoInterface,
+            message: MessagesInterface,
+    ):
+        """Init RepoProvider."""
+        self.message = message
+        self.repo = repo
+
+    @MessageLogger(logger=logger_provider, show='all')
+    def __call__(self, repo_name: str, items: _t.List[str]) -> Result:
+        """
+        Init a repository.
+
+        Args:
+            repo_name: A repository name.
+
+        Returns:
+            Result :abbr:`DTO (Data Transfer Object)`.
+              - ok, `Message` :abbr:`DTO (Data Transfer Object)`.
+              - err, `Message` :abbr:`DTO (Data Transfer Object)`.
+        """
+        result = Result()
+        try:
+            # Check if repo already init
+
+            # init repo
+            commit: str = self.repo.init(repo_name=repo_name, items=items)
+
+            result.ok = self.message.msg(name='repo_init_ok', extra=repo_name)
+            result.ok.text += f" commit {commit}"
+
+        except Exception as exc:
+            result.err = self.message.msg(
+                name='repo_init_failed', extra=repo_name)
+            result.err.text += f" {exc}"
 
         return result

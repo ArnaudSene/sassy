@@ -8,8 +8,9 @@ Contact:
 """
 import argparse
 import os
-os.environ['VERBOSE'] = 'verbose'
-from _sassy import a_sassy as _a, p_sassy as _p  # noqa E402
+
+from _sassy.a_sassy import Sassy
+from _sassy.p_sassy import MessageService, RepoProvider
 
 
 class Parser:
@@ -54,26 +55,26 @@ def main():
     """Execute the main function."""
     try:
         args = Parser()()
+        message = MessageService()
+        repo = RepoProvider()
 
         if args.create:
             if len(args.apps_feat) == 1:
                 apps = args.apps_feat[0]
-                sassy = _a.Sassy(apps=apps, message=_p.MessageService())
-
+                sassy = Sassy(apps=apps, message=message, repo=repo,)
                 sassy.create_structure()
+
             else:
                 apps = args.apps_feat[0]
                 feature = args.apps_feat[1]
-                sassy = _a.Sassy(apps=apps, message=_p.MessageService())
-
+                sassy = Sassy(apps=apps, message=message, repo=repo,)
                 sassy.create_feature(feature=feature)
 
         elif args.delete:
             if len(args.apps_feat) == 2:
                 apps = args.apps_feat[0]
                 feature = args.apps_feat[1]
-                sassy = _a.Sassy(apps=apps, message=_p.MessageService())
-
+                sassy = Sassy(apps=apps, message=message, repo=repo,)
                 sassy.delete_feature(feature=feature)
         else:
             Parser().help()

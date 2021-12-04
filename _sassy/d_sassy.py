@@ -36,6 +36,10 @@ class Result:
         """
         Get ok.
 
+        :getter: Returns the ok value.
+        :setter: Sets the ok value.
+        :type: Any
+
         Returns (Any):
             ok result.
         """
@@ -57,6 +61,10 @@ class Result:
     def err(self) -> _t.Any:
         """
         Get error.
+
+        :getter: Returns the err value.
+        :setter: Sets the err value.
+        :type: Any
 
         Returns (Any):
             An error.
@@ -136,6 +144,10 @@ class Message:
         """
         Get text value.
 
+        :getter: Returns the text value.
+        :setter: Sets the text value.
+        :type: str
+
         Returns (str):
             A text.
         """
@@ -145,6 +157,10 @@ class Message:
     def text(self, text: str):
         """
         Set text value.
+
+        :getter: Returns the text value.
+        :setter: Sets the text value.
+        :type: str
 
         Args:
             text (str): A text.
