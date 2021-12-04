@@ -5,8 +5,10 @@ A Python framework for building SaaS applications using clean architecture.
 
 ## Installation
 
+### Halia pypi
+
 ```
-pip install sassy
+pip install sassy --extra-index-url https://__token__:<your_personal_token>@gitlab.com/api/v4/projects/31729495/packages/pypi/simple
 ```
 
 ## Usage 
