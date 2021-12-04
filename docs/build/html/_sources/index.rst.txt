@@ -30,12 +30,31 @@ Indices and tables
 
 
 Contents
---------
+========
 
 .. toctree::
-
    usage
+
+Applications
+============
+
+.. toctree::
    applications
+
+Domains
+=======
+
+.. toctree::
    domains
+
+Interfaces
+==========
+
+.. toctree::
    interfaces
+
+Providers
+=========
+
+.. toctree::
    providers
