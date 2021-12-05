@@ -11,6 +11,7 @@ structure:
       - CHANGE.md
       - VERSION
       - AUTHORS.md
+      - requirements.txt
 
   docs:
     dirs:

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Main script to create and manage a python project through the clean \
 architecture design.
