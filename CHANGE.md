@@ -1,4 +1,9 @@
---
+# 0.0.3
+
+- add .coveragerc
+- add __init__ for tests directories
+
+---
 # 0.0.2
 
 ## Git repo

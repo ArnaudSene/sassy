@@ -12,6 +12,7 @@ structure:
       - VERSION
       - AUTHORS.md
       - requirements.txt
+      - .coveragerc
 
   docs:
     dirs:
@@ -28,10 +29,14 @@ structure:
 
   tests:
     dirs:
+      - tests
+      - tests/unit
       - tests/unit/applications
       - tests/unit/domains
       - tests/unit/providers
       - tests/integration
+    files:
+      - __init__.py: '"""Init for __APPS__."""'
 
   clean_arch:
     dirs:
