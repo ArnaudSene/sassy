@@ -4,7 +4,10 @@
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+import os
 # -- Path setup --------------------------------------------------------------
+import pathlib
+import sys
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -13,19 +16,18 @@
 # import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
-import pathlib
-import sys
 sys.path.insert(0, pathlib.Path(__file__).parents[2].resolve().as_posix())
-print(pathlib.Path(__file__).parents[2])
+root_path = pathlib.Path(__file__).parents[2]
+# pathlib.Path(__file__).parents[2]
 # -- Project information -----------------------------------------------------
-
 project = 'sassy'
 copyright = '2021, Arnaud SENE & Karol KOZUBAL'
 author = 'Arnaud SENE & Karol KOZUBAL'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.2'
-
+# release = '0.0.2'
+version_file = os.path.join(root_path, 'VERSION')
+release = open(version_file, 'r').read()
 
 # -- General configuration ---------------------------------------------------
 
@@ -55,7 +57,11 @@ exclude_patterns = []
 # a list of builtin themes.
 #
 # html_theme = 'alabaster'
-html_theme = 'furo'
+# html_theme = 'furo'
+html_theme = 'sphinx_rtd_theme'
+# html_theme = 'sphinx_book_theme'
+# html_theme = 'pydata_sphinx_theme'
+# html_theme = 'sphinx_material'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
