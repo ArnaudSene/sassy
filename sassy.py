@@ -9,6 +9,8 @@ Contact:
 """
 import argparse
 import os
+import sys
+import textwrap
 
 from _sassy.a_sassy import Sassy
 from _sassy.p_sassy import MessageService, RepoProvider
@@ -19,8 +21,17 @@ class Parser:
 
     def __init__(self):
         """Init."""
+        self.exe = os.path.basename(sys.argv[0])
         self.parser = argparse.ArgumentParser(
-            description='Manage Clean Architecture application.')
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            description="Manage Clean Architecture application.",
+            epilog=textwrap.dedent(f'''\
+                examples:
+                  {self.exe} <apps_name> --create
+                  {self.exe} <apps_name> <feature_name> --create
+                  {self.exe} <apps_name> <feature_name> --delete
+            ''')
+        )
 
         self.parser.add_argument(
             'apps_feat', nargs='+', type=str, help='apps_name [feature]')
@@ -41,15 +52,10 @@ class Parser:
         """Parse arguments."""
         args = self.parser.parse_args()
         return args
-
-    def help(self):
-        """Show help."""
-        self.parser.print_help()
-        fbn = os.path.basename(__file__)
-        print(f"\nexample:\n"
-              f"  {fbn} <apps_name> --create\n"
-              f"  {fbn} <apps_name> <feature_name> --create\n"
-              f"  {fbn} <apps_name> <feature_name> --delete\n")
+    #
+    # def help(self):
+    #     """Show help."""
+    #     self.parser.print_help()
 
 
 def main():
@@ -62,23 +68,23 @@ def main():
         if args.create:
             if len(args.apps_feat) == 1:
                 apps = args.apps_feat[0]
-                sassy = Sassy(apps=apps, message=message, repo=repo,)
+                sassy = Sassy(apps=apps, message=message, repo=repo)
                 sassy.create_structure()
 
             else:
                 apps = args.apps_feat[0]
                 feature = args.apps_feat[1]
-                sassy = Sassy(apps=apps, message=message, repo=repo,)
+                sassy = Sassy(apps=apps, message=message, repo=repo)
                 sassy.create_feature(feature=feature)
 
         elif args.delete:
             if len(args.apps_feat) == 2:
                 apps = args.apps_feat[0]
                 feature = args.apps_feat[1]
-                sassy = Sassy(apps=apps, message=message, repo=repo,)
+                sassy = Sassy(apps=apps, message=message, repo=repo)
                 sassy.delete_feature(feature=feature)
         else:
-            Parser().help()
+            print(f"Invalid arguments: {sys.argv[1:]}!")
 
     except Exception as exc:
         print(f'{exc}')
@@ -86,3 +92,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
