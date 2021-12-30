@@ -7,6 +7,7 @@ Contact:
 """
 import functools
 import os
+import pathlib
 import typing as _t
 
 import yaml as _yaml
@@ -107,8 +108,8 @@ class Config:
 class Sassy(Config):
     """``Sassy`` class."""
 
-    _PATH = os.path.dirname(os.path.abspath(__file__))
-    _ROOT_PATH = "/".join(_PATH.split('/')[:-1])
+    _PATH = pathlib.Path(__file__).parents[0]
+    _ROOT_PATH = pathlib.Path(__file__).parents[1]
     _CONFIG_FILE = 'sassy.yml'
     _STRUCTURE = 'structure'
     _FEATURE = 'features'
@@ -134,8 +135,8 @@ class Sassy(Config):
                 (dependency injection).
         """
         self.apps = apps
-        self.apps_path = "/".join([self._ROOT_PATH, self.apps])
-        self.config_file = "/".join([self._PATH, self._CONFIG_FILE])
+        self.apps_path = os.path.abspath(self._ROOT_PATH / self.apps)
+        self.config_file = os.path.abspath(self._PATH / self._CONFIG_FILE)
         self.update: bool = False
         self.message = message
         self.repo = repo
@@ -154,12 +155,13 @@ class Sassy(Config):
             A path.
         """
         apps = self.apps.replace('-', '_')
-        path = "/".join([self.apps_path, apps, dir_name])
+        apps_path = pathlib.Path(self.apps_path)
+        path = apps_path / apps / dir_name
 
         if struct_name in self._ROOT_DIRS:
-            path = "/".join([self.apps_path, dir_name])
+            path = apps_path / dir_name
 
-        return path
+        return os.path.abspath(path)
 
     @staticmethod
     def _get_file_dto(
@@ -247,7 +249,6 @@ class Sassy(Config):
                 if result.err:
                     return result
 
-                # repo_name = path if not repo_name else repo_name
                 if not repo_name:
                     repo_name = path
                 else:
@@ -257,7 +258,7 @@ class Sassy(Config):
                 for file in struct.files:
                     file_name = file.replace_file_name(apps_keyword)
                     content = file.replace_content(apps_keyword)
-                    file_path = "/".join([path, file_name])
+                    file_path = os.path.abspath(pathlib.Path(path) / file_name)
                     files = {file_path: content}
                     dirs_and_files.append(file_path)
 
@@ -267,8 +268,16 @@ class Sassy(Config):
             repo_apps = InitRepo(repo=self.repo, message=self.message)
             repo_apps(repo_name=repo_name, items=dirs_and_files)
 
-    def create_feature(self, feature: str):
-        """Create a clean architecture feature structure."""
+    def create_feature(self, feature: str) -> None:
+        """
+        Create a clean architecture feature structure.
+
+        Args:
+            feature (str): A feature name.
+
+        Returns:
+            None
+        """
         feature = feature.lower().replace('-', '_')
         feat_keyword = {self.cfg[self._FEAT]: feature}
 
@@ -281,12 +290,12 @@ class Sassy(Config):
                 for file in struct.files:
                     file_name = file.replace_file_name(feat_keyword)
                     content = file.replace_content(feat_keyword)
-                    file_path = "/".join([path, file_name])
+                    file_path = os.path.abspath(pathlib.Path(path) / file_name)
                     files = {file_path: content}
 
                     self.create_file(files=files)
 
-    def delete_feature(self, feature: str):
+    def delete_feature(self, feature: str) -> None:
         """
         Delete a clean architecture feature structure.
 
@@ -306,7 +315,7 @@ class Sassy(Config):
                 # create file
                 for file in struct.files:
                     file_name = file.replace_file_name(payload)
-                    file_path = "/".join([path, file_name])
+                    file_path = os.path.abspath(pathlib.Path(path) / file_name)
                     self.delete_file(file=file_path)
 
     @MessageLogger(logger=logger_provider, show='all')
