@@ -1,3 +1,9 @@
+# 0.1.1
+## fix pathlib
+
+- use pathlib to manage path
+
+---
 # 0.1.0
 ## apis
 

@@ -7,6 +7,7 @@ Contact:
 """
 import logging
 import os
+import pathlib
 import typing as _t
 
 import git
@@ -17,7 +18,7 @@ from _sassy.d_sassy import Message
 from _sassy.i_sassy import LoggerInterface, MessagesInterface, RepoInterface
 
 _MESSAGES_FILE = 'messages.yml'
-_PATH = os.path.dirname(os.path.abspath(__file__))
+_PATH = pathlib.Path(__file__).parents[0]
 
 
 class Logger(LoggerInterface):
@@ -81,7 +82,7 @@ class MessageService(MessagesInterface):
     def __init__(self):
         """Init instance."""
         self.messages: _t.Optional[_t.Dict[str, _t.Any]] = None
-        self.message_file = "/".join([_PATH, _MESSAGES_FILE])
+        self.message_file = os.path.abspath(_PATH / _MESSAGES_FILE)
         self.load_messages()
 
     def load_messages(self):

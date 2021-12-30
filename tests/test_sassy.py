@@ -5,7 +5,8 @@ Contact:
   Arnaud SENE, arnaud.sene@halia.ca
   Karol KOZUBAL, karol.lozubal@halia.ca
 """
-import os
+import os.path
+import pathlib
 import typing as _t
 from unittest.mock import patch, mock_open, call
 
@@ -58,10 +59,15 @@ class TestSassy:
     repo = FakeRepoProvider()
 
     _VERBOSE = False
-    tests_dir = os.path.dirname(os.path.abspath(__file__))
-    cwd = "/".join(tests_dir.split('/')[:-1])
-    sassy_dir = "/".join([cwd, '_sassy'])
-    yaml_file = "/".join([sassy_dir, 'sassy.yml'])
+
+    TESTS_DIR = pathlib.Path(__file__).parents[0]
+    CWD = pathlib.Path(__file__).parents[1]
+    SASSY_DIR = CWD / '_sassy'
+    YAML_FILE = SASSY_DIR / 'sassy.yml'
+
+    sassy_dir = SASSY_DIR.resolve().as_posix()
+    yaml_file = YAML_FILE.resolve().as_posix()
+
     message = MessageService()
     yaml_load = {
         'apps': '__ABC__',
@@ -251,7 +257,8 @@ class TestSassy:
     def test_sassy_load_config_bad_format(self):
         """load_config raise ParserError."""
         config = Config(message=self.message)
-        yaml_file = "/".join([self.tests_dir, 'test_sassy.py'])
+        yaml_file = \
+            pathlib.Path(self.TESTS_DIR / 'test_sassy.py').resolve().as_posix()
         result = config.load_config(config_file=yaml_file)
         assert result.err.code == 400
 
@@ -534,14 +541,14 @@ class TestSassy:
         assert file.replace_content(payload) == expected
 
     def test_create_structure_ok(self):
+        fake_apps = 'fake_sassy'
         patcher = patch(f'{APPS_PATH}._yaml.load')
         mock_cfg = patcher.start()
         mock_cfg.return_value = self.yaml_load
 
         result = Result()
         result.ok = 'this is ok'
-        sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
+        sassy = Sassy(apps=fake_apps, message=self.message, repo=self.repo)
 
         dir_patcher = patch(f'{APPS_PATH}.Sassy.create_dir')
         file_patcher = patch(f'{APPS_PATH}.Sassy.create_file')
@@ -549,34 +556,43 @@ class TestSassy:
         mock_create_dir.return_value = result
         mock_create_file = file_patcher.start()
         mock_create_file.return_value = result
-
         sassy.create_structure()
-        dir_calls = [
-            call(name='/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
-                      'fake_sassy/apps_dir_1'),
-            call(name='/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
-                      'fake_sassy/apps_dir_2'),
-            call(name='/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
-                      'fake_sassy/other_dir_1'),
-            call(name='/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
-                      'fake_sassy/other_dir_2'),
-            call(name='/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
-                      'tests/tests_dir_1'),
-            call(name='/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
-                      'tests/tests_dir_2'),
-        ]
+
+        # from fake yaml file
+        structures = self.yaml_load['structure']
+        apps_dirs = structures['apps']['dirs']
+        other_dirs = structures['other']['dirs']
+        apps_files = structures['apps']['files']
+        other_files = structures['other']['files']
+        test_dirs = structures['tests']['dirs']
+
+        _path = pathlib.Path(__file__).parents[1]
+        apps_path = _path / fake_apps / fake_apps
+        tests_path = _path / fake_apps
+
+        # Create Dirs
+        apps_dir_calls = [
+            call(name=os.path.abspath(apps_path / apps_dir))
+            for apps_dir in apps_dirs]
+        other_dir_calls = [
+            call(name=os.path.abspath(apps_path / other_dir))
+            for other_dir in other_dirs]
+        test_dir_calls = [
+            call(name=os.path.abspath(tests_path / test_dir))
+            for test_dir in test_dirs]
+
+        dir_calls = apps_dir_calls + other_dir_calls + test_dir_calls
         mock_create_dir.assert_has_calls(dir_calls, any_order=True)
 
-        file_calls = [
-            call(files={'/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
-                        'fake_sassy/apps_dir_1/fake_file': ''}),
-            call(files={'/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
-                        'fake_sassy/apps_dir_2/fake_file': ''}),
-            call(files={'/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
-                        'fake_sassy/other_dir_1/fake_file': ''}),
-            call(files={'/Volumes/SSD_Data/halia/Sassy/fake_sassy/'
-                        'fake_sassy/other_dir_2/fake_file': ''})
-        ]
+        # Create Files
+        apps_file_calls = [
+            call(files={os.path.abspath(apps_path / apps_dir / file): ''})
+            for file in apps_files for apps_dir in apps_dirs]
+        other_file_calls = [
+            call(files={
+                os.path.abspath(apps_path / other_dir / other_file): ''})
+            for other_file in other_files for other_dir in other_dirs]
+        file_calls = apps_file_calls + other_file_calls
         mock_create_file.assert_has_calls(file_calls, any_order=True)
 
         dir_patcher.stop()
@@ -584,34 +600,40 @@ class TestSassy:
         patcher.stop()
 
     def test_create_feature_ok(self):
+        fake_apps = 'fake_sassy'
         patcher = patch(f'{APPS_PATH}._yaml.load')
         mock_cfg = patcher.start()
         mock_cfg.return_value = self.yaml_load
 
         result = Result()
         result.ok = 'this is ok'
-        sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
+        sassy = Sassy(apps=fake_apps, message=self.message, repo=self.repo)
         file_patcher = patch(f'{APPS_PATH}.Sassy.create_file')
 
         mock_create_file = file_patcher.start()
         mock_create_file.return_value = result
-        sassy.create_feature(feature='fake_feature')
+        fake_feature = 'fake_feature'
+        test_fake_feature = f'test_{fake_feature}'
+        sassy.create_feature(feature=fake_feature)
+        # from fake yaml file
+        structure = self.yaml_load['structure']
+        apps_dirs = structure['apps']['dirs']
+        test_dirs = structure['tests']['dirs']
 
-        file_calls = [
+        #
+        apps_path = self.CWD / fake_apps / fake_apps
+        tests_path = self.CWD / fake_apps
+
+        apps_dir_calls = [
             call(files={
-                '/Volumes/SSD_Data/halia/Sassy/fake_sassy/fake_sassy'
-                '/apps_dir_1/fake_feature.py': ''}),
+                os.path.abspath(apps_path/apps_dir/f"{fake_feature}.py"): ''})
+            for apps_dir in apps_dirs]
+        test_dir_calls = [
             call(files={
-                '/Volumes/SSD_Data/halia/Sassy/fake_sassy/fake_sassy'
-                '/apps_dir_2/fake_feature.py': ''}),
-            call(files={
-                '/Volumes/SSD_Data/halia/Sassy/fake_sassy/tests'
-                '/tests_dir_1/test_fake_feature.py': ''}),
-            call(files={
-                '/Volumes/SSD_Data/halia/Sassy/fake_sassy/tests'
-                '/tests_dir_2/test_fake_feature.py': ''})
-        ]
+                os.path.abspath(
+                    tests_path/test_dir/f"{test_fake_feature}.py"): ''})
+            for test_dir in test_dirs]
+        file_calls = apps_dir_calls + test_dir_calls
 
         mock_create_file.assert_has_calls(file_calls, any_order=True)
 
@@ -619,27 +641,40 @@ class TestSassy:
         patcher.stop()
 
     def test_delete_feature_ok(self):
+        fake_apps = 'fake_sassy'
         patcher = patch(f'{APPS_PATH}._yaml.load')
         mock_cfg = patcher.start()
         mock_cfg.return_value = self.yaml_load
         result = Result()
         result.ok = 'this is ok'
-        sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
+        sassy = Sassy(apps=fake_apps, message=self.message, repo=self.repo)
         file_patcher = patch(f'{APPS_PATH}.Sassy.delete_file')
         mock_delete_file = file_patcher.start()
         mock_delete_file.return_value = result
         sassy.delete_feature(feature='fake_feature')
 
-        file_calls = [
-            call(file='/Volumes/SSD_Data/halia/Sassy/fake_sassy/fake_sassy'
-                      '/apps_dir_1/fake_feature.py'),
-            call(file='/Volumes/SSD_Data/halia/Sassy/fake_sassy/fake_sassy'
-                      '/apps_dir_2/fake_feature.py'),
-            call(file='/Volumes/SSD_Data/halia/Sassy/fake_sassy/tests'
-                      '/tests_dir_1/test_fake_feature.py'),
-            call(file='/Volumes/SSD_Data/halia/Sassy/fake_sassy/tests'
-                      '/tests_dir_2/test_fake_feature.py')]
+        mock_create_file = file_patcher.start()
+        mock_create_file.return_value = result
+        fake_feature = 'fake_feature'
+        test_fake_feature = f'test_{fake_feature}'
+        sassy.create_feature(feature=fake_feature)
+        # from fake yaml file
+        structure = self.yaml_load['structure']
+        apps_dirs = structure['apps']['dirs']
+        test_dirs = structure['tests']['dirs']
+
+        #
+        apps_path = self.CWD / fake_apps / fake_apps
+        tests_path = self.CWD / fake_apps
+
+        apps_dir_calls = [
+            call(file=os.path.abspath(apps_path/apps_dir/f"{fake_feature}.py"))
+            for apps_dir in apps_dirs]
+        test_dir_calls = [
+            call(file=os.path.abspath(
+                tests_path/test_dir/f"{test_fake_feature}.py"))
+            for test_dir in test_dirs]
+        file_calls = apps_dir_calls + test_dir_calls
 
         mock_delete_file.assert_has_calls(file_calls, any_order=True)
 
