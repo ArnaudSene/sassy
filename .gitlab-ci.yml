@@ -12,7 +12,7 @@ build_sassy:
   script:
     - pip install twine
     - python setup.py sdist bdist_wheel
-    - TWINE_PASSWORD=${CI_JOB_TOKEN} TWINE_USERNAME=gitlab-ci-token python -m twine upload --repository-url ${CI_API_V4_URL}/projects/13566696/packages/pypi dist/*
+    - TWINE_PASSWORD=${HALIA_CA_PYPI_TOKEN} TWINE_USERNAME=halia-ca-pypi-token python -m twine upload --repository-url ${CI_API_V4_URL}/projects/13566696/packages/pypi dist/*
   when: manual
   tags:
   - halia
