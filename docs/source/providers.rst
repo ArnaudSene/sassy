@@ -1,7 +1,7 @@
 Providers
 =========
 
-.. currentmodule:: _sassy.__init__
+.. currentmodule:: sassy.__init__
 
 .. autosummary::
    :recursive:
