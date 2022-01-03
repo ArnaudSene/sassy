@@ -1,22 +1,21 @@
 """
-Unit test for _sassy.
+Unit test for sassy.
 
 Contact:
   Arnaud SENE, arnaud.sene@halia.ca
   Karol KOZUBAL, karol.lozubal@halia.ca
 """
-import os.path
-import pathlib
-import typing as _t
-from unittest.mock import patch, mock_open, call
+from pathlib import Path
+from typing import List
+from unittest.mock import patch, call
 
-import git
-import pytest
+from git import Repo
+from pytest import mark
 
-from _sassy import RepoInterface, MessageService, Result, Message, \
+from sassy import RepoInterface, MessageService, Result, Message, \
     MessageLogger, Config, Sassy, File, InitRepo, RepoProvider
 
-APPS_PATH = '_sassy'
+APPS_PATH = 'sassy'
 
 
 class FakeRepoProvider(RepoInterface):
@@ -30,7 +29,7 @@ class FakeRepoProvider(RepoInterface):
             raise self.RAISE
         return self.COMMIT
 
-    def init(self, repo_name: str, items: _t.List[str]) -> str:
+    def init(self, repo_name: str, items: List[str]) -> str:
         """
         Initialize a new repository.
 
@@ -55,9 +54,9 @@ class TestSassy:
 
     _VERBOSE = False
 
-    TESTS_DIR = pathlib.Path(__file__).parents[0]
-    CWD = pathlib.Path(__file__).parents[1]
-    SASSY_DIR = CWD / '_sassy'
+    TESTS_DIR = Path(__file__).parents[0]
+    CWD = Path(__file__).parents[1]
+    SASSY_DIR = CWD / APPS_PATH
     YAML_FILE = SASSY_DIR / 'sassy.yml'
 
     sassy_dir = SASSY_DIR.resolve().as_posix()
@@ -116,7 +115,7 @@ class TestSassy:
 
         assert str(r) == 'this is an error'
 
-    @pytest.mark.parametrize('sev, lvl', [
+    @mark.parametrize('sev, lvl', [
         ('DEBUG', 10),
         ('INFO', 20),
         ('WARNING', 30),
@@ -187,7 +186,7 @@ class TestSassy:
         def foo(r):
             return r
 
-        with patch('_sassy.MessageLogger.log') as mock:
+        with patch('sassy.MessageLogger.log') as mock:
             rr = foo(result)
             mock.assert_called_with(message=result.ok)
             assert rr == result
@@ -203,7 +202,7 @@ class TestSassy:
         def foo(r):
             return r
 
-        with patch('_sassy.MessageLogger.log') as mock:
+        with patch('sassy.MessageLogger.log') as mock:
             rr = foo(result)
             mock.assert_called_with(message=result.err)
             assert rr == result
@@ -219,7 +218,7 @@ class TestSassy:
         def foo(r):
             return r
 
-        with patch('_sassy.MessageLogger.log') as mock:
+        with patch('sassy.MessageLogger.log') as mock:
             rr = foo(result)
             mock.assert_not_called()
             assert rr == result
@@ -232,7 +231,7 @@ class TestSassy:
         def foo(r):
             return r
 
-        with patch('_sassy.MessageLogger.log') as mock:
+        with patch('sassy.MessageLogger.log') as mock:
             rr = foo(result)
             mock.assert_not_called()
             assert rr == result
@@ -242,14 +241,14 @@ class TestSassy:
         config = Config(message=self.message)
         result_cfg = config.load_config(config_file=self.yaml_file)
         sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
+            apps='fakesassy', message=self.message, repo=self.repo)
         assert result_cfg.ok == sassy.cfg
 
     def test_sassy_load_config_bad_format(self):
         """load_config raise ParserError."""
         config = Config(message=self.message)
         yaml_file = \
-            pathlib.Path(self.TESTS_DIR / 'test_sassy.py').resolve().as_posix()
+            Path(self.TESTS_DIR / 'test_sassy.py').resolve().as_posix()
         result = config.load_config(config_file=yaml_file)
         assert result.err.code == 400
 
@@ -260,7 +259,7 @@ class TestSassy:
         result = config.load_config(config_file=config_file)
         assert result.err.code == 401
 
-    @pytest.mark.parametrize('files, expected', [
+    @mark.parametrize('files, expected', [
         ('fake_file', ['fake_file', '']),
         ({
              'fake_file': '"""THis is a content."""'
@@ -269,12 +268,12 @@ class TestSassy:
     def test_get_file_dto_ok(self, files, expected):
         """Get a File DTO."""
         sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
+            apps='fakesassy', message=self.message, repo=self.repo)
         file: File = sassy._get_file_dto(files=files)
         assert file.name == expected[0]
         assert file.content == expected[1]
 
-    @pytest.mark.parametrize('idx, files', [
+    @mark.parametrize('idx, files', [
         (0, 123),
         (1, True),
         (2, False),
@@ -284,30 +283,30 @@ class TestSassy:
     def test_get_file_dto_not_ok(self, idx, files):
         """Get None."""
         sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
+            apps='fakesassy', message=self.message, repo=self.repo)
         file: File = sassy._get_file_dto(files=files)
         assert file is None
 
     def test__get_struct_dto_not_ok(self):
         """Invalid yaml file or missing keyword. Result is []"""
         yaml_load = {'kw': 'invalid'}
-        patcher = patch(f'{APPS_PATH}.yaml.load')
+        patcher = patch(f'{APPS_PATH}.load')
         mock_cfg = patcher.start()
         mock_cfg.return_value = yaml_load
         sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
+            apps='fakesassy', message=self.message, repo=self.repo)
         result = sassy._get_struct_dto()
         assert not result
         patcher.stop()
 
     def test__get_struct_dto_ok(self):
         """Valid yaml file. Result is list of Struct DTO"""
-        patcher = patch(f'{APPS_PATH}.yaml.load')
+        patcher = patch(f'{APPS_PATH}.load')
         mock_cfg = patcher.start()
         mock_cfg.return_value = self.yaml_load
 
         sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
+            apps='fakesassy', message=self.message, repo=self.repo)
         result = sassy._get_struct_dto()
         assert result[0].name == 'apps'
         assert result[0].dirs == ['apps_dir_1', 'apps_dir_2']
@@ -317,22 +316,22 @@ class TestSassy:
     def test__get_feature_structure_dto_not_ok(self):
         """Invalid yaml file or missing keyword. Result is []"""
         yaml_load = {'kw': 'invalid'}
-        patcher = patch(f'{APPS_PATH}.yaml.load')
+        patcher = patch(f'{APPS_PATH}.load')
         mock_cfg = patcher.start()
         mock_cfg.return_value = yaml_load
         sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
+            apps='fakesassy', message=self.message, repo=self.repo)
         result = sassy._get_feature_structure_dto()
         assert not result
         patcher.stop()
 
     def test__get_feature_structure_dto_ok(self):
         """Valid yaml file. Result is list of Struct DTO"""
-        patcher = patch(f'{APPS_PATH}.yaml.load')
+        patcher = patch(f'{APPS_PATH}.load')
         mock_cfg = patcher.start()
         mock_cfg.return_value = self.yaml_load
         sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
+            apps='fakesassy', message=self.message, repo=self.repo)
         result = sassy._get_feature_structure_dto()
         assert result[0].name == 'apps'
         assert result[0].dirs == ['apps_dir_1', 'apps_dir_2']
@@ -341,95 +340,79 @@ class TestSassy:
 
     def tests_create_dir_already_exist(self):
         sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
+            apps='fakesassy', message=self.message, repo=self.repo)
         sassy.update = False
-        isdir_patcher = patch(f'{APPS_PATH}.os.path.isdir')
+        isdir_patcher = patch(f'{APPS_PATH}.Path.is_dir')
         mock_isdir = isdir_patcher.start()
         mock_isdir.return_value = True
-        makedir_patcher = patch(f'{APPS_PATH}.os.makedirs')
+        makedir_patcher = patch(f'{APPS_PATH}.Path.mkdir')
         makedir_patcher.start()
 
-        r = sassy.create_dir(name='fake_name')
+        r = sassy.create_dir(name=Path('fake_name'))
         isdir_patcher.stop()
         makedir_patcher.stop()
         assert r.err.code == 201
 
     def tests_create_dir_success(self):
         sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
+            apps='fakesassy', message=self.message, repo=self.repo)
         sassy.update = False
-        isdir_patcher = patch(f'{APPS_PATH}.os.path.isdir')
+        isdir_patcher = patch(f'{APPS_PATH}.Path.is_dir')
         mock_isdir = isdir_patcher.start()
         mock_isdir.return_value = False
-        makedir_patcher = patch(f'{APPS_PATH}.os.makedirs')
+        makedir_patcher = patch(f'{APPS_PATH}.Path.mkdir')
         makedir_patcher.start()
 
-        r = sassy.create_dir(name='fake_name')
+        r = sassy.create_dir(name=Path('fake_name'))
         isdir_patcher.stop()
         makedir_patcher.stop()
         assert r.ok.code == 102
 
     def tests_create_dir_success_already_exist(self):
         sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
+            apps='fakesassy', message=self.message, repo=self.repo)
         sassy.update = True
-        isdir_patcher = patch(f'{APPS_PATH}.os.path.isdir')
+        isdir_patcher = patch(f'{APPS_PATH}.Path.is_dir')
         mock_isdir = isdir_patcher.start()
         mock_isdir.return_value = True
-        makedir_patcher = patch(f'{APPS_PATH}.os.makedirs')
+        makedir_patcher = patch(f'{APPS_PATH}.Path.mkdir')
         makedir_patcher.start()
 
-        r = sassy.create_dir(name='fake_name')
+        r = sassy.create_dir(name=Path('fake_name'))
         isdir_patcher.stop()
         makedir_patcher.stop()
         assert r.ok.code == 102
 
-    def tests_create_dir_failed_with_os_error_exception(self):
-        sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
-        sassy.update = True
-        isdir_patcher = patch(f'{APPS_PATH}.os.path.isdir')
-        mock_isdir = isdir_patcher.start()
-        mock_isdir.return_value = True
-        makedir_patcher = patch(f'{APPS_PATH}.os.makedirs')
-        mock_makedir = makedir_patcher.start()
-        mock_makedir.side_effect = OSError
-
-        r = sassy.create_dir(name='fake_name')
-        isdir_patcher.stop()
-        makedir_patcher.stop()
-        assert r.err.code == 302
-
     def test_create_dir_success_with_params(self):
         sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
+            apps='fakesassy', message=self.message, repo=self.repo)
         sassy.update = False
-        isdir_patcher = patch(f'{APPS_PATH}.os.path.isdir')
+        isdir_patcher = patch(f'{APPS_PATH}.Path.is_dir')
         mock_isdir = isdir_patcher.start()
         mock_isdir.return_value = True
-        name = 'fake_name'
+        name = Path('fake_name')
         sassy.create_dir(name=name)
-        mock_isdir.assert_called_once_with(name)
+        mock_isdir.assert_called_once_with()
         isdir_patcher.stop()
 
     def test_create_dir_success_without_params(self):
         sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
+            apps='fakesassy', message=self.message, repo=self.repo)
         sassy.update = False
-        isdir_patcher = patch(f'{APPS_PATH}.os.path.isdir')
+        isdir_patcher = patch(f'{APPS_PATH}.Path.is_dir')
         mock_isdir = isdir_patcher.start()
         mock_isdir.return_value = True
         sassy.create_dir()
-        mock_isdir.assert_called_once_with(f"{sassy.apps_path}")
+        mock_isdir.assert_called_once_with()
         isdir_patcher.stop()
 
     def test_create_file_already_exist(self):
         """File is already exist"""
         sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
-        fake_file = 'fake_file.py'
+            apps='fakesassy', message=self.message, repo=self.repo)
+        fake_file = Path('fake/file/path/fake_file.py')
         content = "Message to write on file to be written"
-        patcher = patch(f'{APPS_PATH}.os.path.isfile')
+        patcher = patch(f'{APPS_PATH}.Path.is_file')
         mock_isfile = patcher.start()
         mock_isfile.return_value = True
         r = sassy.create_file(files={fake_file: content})
@@ -439,25 +422,26 @@ class TestSassy:
     def test_create_file_success_ok(self):
         """Write file ok"""
         sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
-        fake_file = 'fake/file/path/fake_file.py'
+            apps='fakesassy', message=self.message, repo=self.repo)
+        fake_file = Path('fake/file/path/fake_file.py')
         content = "Message to write on file to be written"
+        touch_patcher = patch(f'{APPS_PATH}.Path.touch')
+        write_patcher = patch(f'{APPS_PATH}.Path.write_text')
+        touch_patcher.start()
+        write_patcher.start()
+        r = sassy.create_file(files={fake_file: content})
+        touch_patcher.stop()
+        write_patcher.stop()
 
-        with patch(f'{APPS_PATH}.open', mock_open()) as mocked_file:
-            r = sassy.create_file(files={fake_file: content})
-
-            mocked_file.assert_called_once_with(f"{fake_file}", 'w')
-
-            mocked_file().write.assert_called_once_with(content + "\n")
-            assert r.ok.code == 101
+        assert r.ok.code == 101
 
     def test_create_file_failed_raise_exception(self):
         """Raise exception"""
         sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
-        fake_file = 'fake_file.py'
+            apps='fakesassy', message=self.message, repo=self.repo)
+        fake_file = Path('fake_file.py')
         content = "Message to write on file to be written"
-        patcher = patch(f'{APPS_PATH}.open')
+        patcher = patch(f'{APPS_PATH}.Path.touch')
         mock_open_ = patcher.start()
         mock_open_.side_effect = Exception('fake_error')
         r = sassy.create_file(files={fake_file: content})
@@ -466,46 +450,46 @@ class TestSassy:
 
     def tests_delete_file_success(self):
         sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
+            apps='fakesassy', message=self.message, repo=self.repo)
         sassy.update = False
-        isfile_patcher = patch(f'{APPS_PATH}.os.path.isfile')
+        isfile_patcher = patch(f'{APPS_PATH}.Path.is_file')
         mock_isfile = isfile_patcher.start()
         mock_isfile.return_value = True
 
-        os_remove_patcher = patch(f'{APPS_PATH}.os.remove')
+        os_remove_patcher = patch(f'{APPS_PATH}.Path.unlink')
         os_remove_patcher.start()
 
-        r = sassy.delete_file(file='fake_file_name')
+        r = sassy.delete_file(file=Path('fake_file_name'))
         isfile_patcher.stop()
         os_remove_patcher.stop()
         assert r.ok.code == 106
 
     def tests_delete_file_raise_exception(self):
         sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
+            apps='fakesassy', message=self.message, repo=self.repo)
         sassy.update = False
-        isfile_patcher = patch(f'{APPS_PATH}.os.path.isfile')
+        isfile_patcher = patch(f'{APPS_PATH}.Path.is_file')
         mock_isfile = isfile_patcher.start()
         mock_isfile.return_value = True
 
-        os_remove_patcher = patch(f'{APPS_PATH}.os.remove')
+        os_remove_patcher = patch(f'{APPS_PATH}.Path.unlink')
         mock_remove = os_remove_patcher.start()
         mock_remove.side_effect = Exception('fake error')
 
-        r = sassy.delete_file(file='fake_file_name')
+        r = sassy.delete_file(file=Path('fake_file_name'))
         isfile_patcher.stop()
         os_remove_patcher.stop()
         assert r.err.code == 303
 
     def tests_delete_file_file_not_exist(self):
         sassy = Sassy(
-            apps='fake_sassy', message=self.message, repo=self.repo)
+            apps='fakesassy', message=self.message, repo=self.repo)
         sassy.update = False
-        isfile_patcher = patch(f'{APPS_PATH}.os.path.isfile')
+        isfile_patcher = patch(f'{APPS_PATH}.Path.is_file')
         mock_isfile = isfile_patcher.start()
         mock_isfile.return_value = False
 
-        r = sassy.delete_file(file='fake_file_name')
+        r = sassy.delete_file(file=Path('fake_file_name'))
         assert r.err.code == 203
 
         isfile_patcher.stop()
@@ -532,8 +516,8 @@ class TestSassy:
         assert file.replace_content(payload) == expected
 
     def test_create_structure_ok(self):
-        fake_apps = 'fake_sassy'
-        patcher = patch(f'{APPS_PATH}.yaml.load')
+        fake_apps = 'fakesassy'
+        patcher = patch(f'{APPS_PATH}.load')
         mock_cfg = patcher.start()
         mock_cfg.return_value = self.yaml_load
 
@@ -543,10 +527,12 @@ class TestSassy:
 
         dir_patcher = patch(f'{APPS_PATH}.Sassy.create_dir')
         file_patcher = patch(f'{APPS_PATH}.Sassy.create_file')
+        repo_patcher = patch(f'{APPS_PATH}.InitRepo.__call__')
         mock_create_dir = dir_patcher.start()
         mock_create_dir.return_value = result
         mock_create_file = file_patcher.start()
         mock_create_file.return_value = result
+        repo_patcher.start()
         sassy.create_structure()
 
         # from fake yaml file
@@ -557,31 +543,28 @@ class TestSassy:
         other_files = structures['other']['files']
         test_dirs = structures['tests']['dirs']
 
-        _path = pathlib.Path(__file__).parents[1]
+        _path = Path(__file__).parents[1]
         apps_path = _path / fake_apps / fake_apps
         tests_path = _path / fake_apps
 
         # Create Dirs
         apps_dir_calls = [
-            call(name=os.path.abspath(apps_path / apps_dir))
-            for apps_dir in apps_dirs]
+            call(name=apps_path / apps_dir) for apps_dir in apps_dirs]
         other_dir_calls = [
-            call(name=os.path.abspath(apps_path / other_dir))
-            for other_dir in other_dirs]
+            call(name=apps_path / other_dir) for other_dir in other_dirs]
         test_dir_calls = [
-            call(name=os.path.abspath(tests_path / test_dir))
-            for test_dir in test_dirs]
+            call(name=tests_path / test_dir) for test_dir in test_dirs]
 
         dir_calls = apps_dir_calls + other_dir_calls + test_dir_calls
         mock_create_dir.assert_has_calls(dir_calls, any_order=True)
 
         # Create Files
         apps_file_calls = [
-            call(files={os.path.abspath(apps_path / apps_dir / file): ''})
+            call(files={apps_path / apps_dir / file: ''})
             for file in apps_files for apps_dir in apps_dirs]
         other_file_calls = [
             call(files={
-                os.path.abspath(apps_path / other_dir / other_file): ''})
+                apps_path / other_dir / other_file: ''})
             for other_file in other_files for other_dir in other_dirs]
         file_calls = apps_file_calls + other_file_calls
         mock_create_file.assert_has_calls(file_calls, any_order=True)
@@ -589,10 +572,11 @@ class TestSassy:
         dir_patcher.stop()
         file_patcher.stop()
         patcher.stop()
+        repo_patcher.stop()
 
     def test_create_feature_ok(self):
-        fake_apps = 'fake_sassy'
-        patcher = patch(f'{APPS_PATH}.yaml.load')
+        fake_apps = 'fakesassy'
+        patcher = patch(f'{APPS_PATH}.load')
         mock_cfg = patcher.start()
         mock_cfg.return_value = self.yaml_load
 
@@ -617,12 +601,11 @@ class TestSassy:
 
         apps_dir_calls = [
             call(files={
-                os.path.abspath(apps_path/apps_dir/f"{fake_feature}.py"): ''})
+                apps_path/apps_dir/f"{fake_feature}.py": ''})
             for apps_dir in apps_dirs]
         test_dir_calls = [
             call(files={
-                os.path.abspath(
-                    tests_path/test_dir/f"{test_fake_feature}.py"): ''})
+                tests_path/test_dir/f"{test_fake_feature}.py": ''})
             for test_dir in test_dirs]
         file_calls = apps_dir_calls + test_dir_calls
 
@@ -632,8 +615,8 @@ class TestSassy:
         patcher.stop()
 
     def test_delete_feature_ok(self):
-        fake_apps = 'fake_sassy'
-        patcher = patch(f'{APPS_PATH}.yaml.load')
+        fake_apps = 'fakesassy'
+        patcher = patch(f'{APPS_PATH}.load')
         mock_cfg = patcher.start()
         mock_cfg.return_value = self.yaml_load
         result = Result()
@@ -644,31 +627,23 @@ class TestSassy:
         mock_delete_file.return_value = result
         sassy.delete_feature(feature='fake_feature')
 
-        mock_create_file = file_patcher.start()
-        mock_create_file.return_value = result
         fake_feature = 'fake_feature'
         test_fake_feature = f'test_{fake_feature}'
-        sassy.create_feature(feature=fake_feature)
-        # from fake yaml file
         structure = self.yaml_load['structure']
         apps_dirs = structure['apps']['dirs']
         test_dirs = structure['tests']['dirs']
-
-        #
         apps_path = self.CWD / fake_apps / fake_apps
         tests_path = self.CWD / fake_apps
 
         apps_dir_calls = [
-            call(file=os.path.abspath(apps_path/apps_dir/f"{fake_feature}.py"))
+            call(file=apps_path/apps_dir/f"{fake_feature}.py")
             for apps_dir in apps_dirs]
         test_dir_calls = [
-            call(file=os.path.abspath(
-                tests_path/test_dir/f"{test_fake_feature}.py"))
+            call(file=tests_path/test_dir/f"{test_fake_feature}.py")
             for test_dir in test_dirs]
         file_calls = apps_dir_calls + test_dir_calls
 
         mock_delete_file.assert_has_calls(file_calls, any_order=True)
-
         file_patcher.stop()
         patcher.stop()
 
@@ -725,35 +700,35 @@ class TestSassy:
     def test_logger_show_log_debug(self):
         logger = MessageLogger()
         message = Message(code=999, severity='DEBUG')
-        with patch('_sassy.logging.Logger.debug') as mock:
+        with patch('sassy.logging.Logger.debug') as mock:
             logger.log(message=message)
             mock.assert_called()
 
     def test_logger_show_log_info(self):
         logger = MessageLogger()
         message = Message(code=999, severity='INFO')
-        with patch('_sassy.logging.Logger.info') as mock:
+        with patch('sassy.logging.Logger.info') as mock:
             logger.log(message=message)
             mock.assert_called()
 
     def test_logger_show_log_warning(self):
         logger = MessageLogger()
         message = Message(code=999, severity='WARNING')
-        with patch('_sassy.logging.Logger.warning') as mock:
+        with patch('sassy.logging.Logger.warning') as mock:
             logger.log(message=message)
             mock.assert_called()
 
     def test_logger_show_log_error(self):
         logger = MessageLogger()
         message = Message(code=999, severity='ERROR')
-        with patch('_sassy.logging.Logger.error') as mock:
+        with patch('sassy.logging.Logger.error') as mock:
             logger.log(message=message)
             mock.assert_called()
 
     def test_logger_show_log_critical(self):
         logger = MessageLogger()
         message = Message(code=999, severity='CRITICAL')
-        with patch('_sassy.logging.Logger.critical') as mock:
+        with patch('sassy.logging.Logger.critical') as mock:
             logger.log(message=message)
             mock.assert_called()
 
@@ -761,23 +736,20 @@ class TestSassy:
         """invalid severity, log.info is used"""
         logger = MessageLogger()
         message = Message(code=999, severity='OTHER')
-        with patch('_sassy.logging.Logger.info') as mock:
+        with patch('sassy.logging.Logger.info') as mock:
             logger.log(message=message)
             mock.assert_called()
 
     def test_repo_provider_git_add(self):
         repo_provider = RepoProvider()
-        repo = git.Repo
+        repo: Repo = Repo
         items = ['abc', 'def']
 
         expected = [
             (100644, 'e69de29bb2d1d6434b8b29ae775ad8c2e48c5391', 0, 'abc'),
             (100644, 'e69de29bb2d1d6434b8b29ae775ad8c2e48c5391', 0, 'def')]
 
-        with patch('_sassy.RepoProvider._git_add') as mock:
+        with patch('sassy.RepoProvider._git_add') as mock:
             mock.return_value = expected
-            result = repo_provider._git_add(
-                repo=repo,
-                items=items
-            )
+            result = repo_provider._git_add(repo=repo, items=items)
             assert result == expected

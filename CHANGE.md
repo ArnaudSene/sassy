@@ -1,3 +1,10 @@
+# 0.1.3
+## code refactor
+
+- move from os to pathlib
+- limit lib import with from against import 
+
+---
 # 0.1.2
 ## refacto
 

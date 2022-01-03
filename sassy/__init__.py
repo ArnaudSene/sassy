@@ -1,21 +1,41 @@
-"""Init Sassy."""
-import functools
+"""
+Sassy tool.
+
+A tool to manage project based on a clean architecture structure.
+
+This file is built under a clean architecture structure with:
+ - Domains/Entities
+ - Interfaces/Abstract classes
+ - Applications/Business Logic
+ - Providers/Services
+
+Features:
+ - Create a clean architecture structure based on YAML configuration file.
+ - Init a Git repository
+ - Create a feature
+ - Delete a feature
+
+Contact:
+  Arnaud SENE, arnaud.sene@halia.ca
+  Karol KOZUBAL, karol.lozubal@halia.ca
+"""
 import logging
 import logging.config
-import os
-import pathlib
 from abc import abstractmethod, ABC
 from dataclasses import dataclass
 from enum import Enum
+from functools import wraps
+from os.path import abspath
+from pathlib import Path
 from typing import Optional, Any, Dict, Union, List
 
-import git
-import yaml
+from git import BaseIndexEntry, Repo
+from yaml import load, Loader
 from yaml.parser import ParserError
 
-ROOT_PATH = pathlib.Path(__file__).parents[1]
-PATH = pathlib.Path(__file__).parents[0]
-MESSAGES_FILE = 'messages.yml'
+PATH = Path(__file__).parent
+ROOT_PATH = PATH.parent
+MESSAGES_FILE = PATH / 'messages.yml'
 LOG_CONF_FILE = "logging_default.yml"
 CONFIG_FILE = 'sassy.yml'
 LOGGER = 'root'
@@ -101,7 +121,7 @@ class Message:
 
     code: int
     severity: str
-    _text = None
+    _text: str = ""
     extra: Optional[str] = None
 
     class SeverityLevel(Enum):
@@ -198,7 +218,7 @@ class File:
     """``File`` :abbr:`DTO (Data Transfer Object)`."""
 
     name: str
-    content: Optional[str] = ''
+    content: str = ''
 
     def replace_content(self, payload: Dict[str, Any]) -> str:
         """
@@ -252,11 +272,7 @@ class MessagesInterface(ABC):
     """Message abstract class (Interface)."""
 
     @abstractmethod
-    def msg(
-            self,
-            name: str,
-            extra: Optional[str] = None
-    ) -> Message:
+    def msg(self, name: str, extra: Optional[str] = None) -> Message:
         """
         Read a message.
 
@@ -293,21 +309,17 @@ class MessageService(MessagesInterface):
 
     def __init__(self):
         """Init instance."""
-        self.messages: Optional[Dict[str, Any]] = None
-        self.message_file = os.path.abspath(PATH / MESSAGES_FILE)
+        self.messages: Dict[str, Any] = {}
+        self.message_file = MESSAGES_FILE
         self.load_messages()
 
     def load_messages(self):
         """Set messages."""
         if not self.messages:
             with open(self.message_file) as file:
-                self.messages = yaml.load(file, Loader=yaml.Loader)
+                self.messages = load(file, Loader=Loader)
 
-    def msg(
-            self,
-            name: str,
-            extra: Optional[str] = None
-    ) -> Message:
+    def msg(self, name: str, extra: Optional[str] = None) -> Message:
         """
         Read a message.
 
@@ -342,9 +354,9 @@ class RepoProvider(RepoInterface):
 
     @staticmethod
     def _git_add(
-            repo: git.repo.base.Repo,
-            items: List[str],
-    ) -> List[tuple]:
+            repo: Repo,
+            items: List[str]
+    ) -> List[BaseIndexEntry]:
         """
         Initialize a new repository.
 
@@ -361,7 +373,7 @@ class RepoProvider(RepoInterface):
         except Exception:
             raise
 
-    def _git_commit(self, repo: git.repo.base.Repo) -> str:
+    def _git_commit(self, repo: Repo) -> str:
         """
         Initialize a new repository.
 
@@ -379,7 +391,7 @@ class RepoProvider(RepoInterface):
             raise
 
     @staticmethod
-    def _git_init(repo_dir: str) -> git.repo.base.Repo:
+    def _git_init(repo_dir: str) -> Repo:
         """
         Initialize a new repository.
 
@@ -390,7 +402,7 @@ class RepoProvider(RepoInterface):
             The ``Repo``.
         """
         try:
-            return git.Repo.init(repo_dir)
+            return Repo.init(repo_dir)
 
         except Exception:
             raise
@@ -407,7 +419,7 @@ class RepoProvider(RepoInterface):
             The commit number.
         """
         try:
-            repo: git.repo.base.Repo = self._git_init(repo_dir=repo_name)
+            repo: Repo = self._git_init(repo_dir=repo_name)
             self._git_add(repo=repo, items=items)
             commit = self._git_commit(repo=repo)
 
@@ -429,10 +441,10 @@ class MessageLogger:
                 Choices are: [ok, err, all] default: all
         """
         self.show = show
-        self.logging_conf = os.path.abspath(PATH / LOG_CONF_FILE)
+        self.logging_conf = PATH / LOG_CONF_FILE
 
         with open(self.logging_conf, 'r') as f:
-            logging_config = yaml.load(f, Loader=yaml.Loader)
+            logging_config = load(f, Loader=Loader)
             logging.config.dictConfig(logging_config)
 
         self.logger = logging.getLogger(LOGGER)
@@ -447,7 +459,7 @@ class MessageLogger:
         Returns (func):
             the function decorated.
         """
-        @functools.wraps(func)
+        @wraps(func)
         def wrapper(*args, **kwargs):
             result: Result = func(*args, **kwargs)
 
@@ -501,7 +513,7 @@ class Config:
     def __init__(self, message: MessagesInterface):
         """Init ``Config`` instance."""
         self.message = message
-        self.cfg = {}
+        self.cfg: Dict[str, Any] = {}
 
     @MessageLogger(show='err')
     def load_config(self, config_file) -> Result:
@@ -518,7 +530,7 @@ class Config:
 
         try:
             with open(config_file) as file:
-                result.ok = yaml.load(file, Loader=yaml.Loader)
+                result.ok = load(file, Loader=Loader)
                 self.cfg = result.ok
 
         except FileNotFoundError as exc:
@@ -559,15 +571,15 @@ class Sassy(Config):
                 (dependency injection).
         """
         self.apps = apps
-        self.apps_path = os.path.abspath(ROOT_PATH / self.apps)
-        self.config_file = os.path.abspath(PATH / CONFIG_FILE)
+        self.apps_path: Path = ROOT_PATH / self.apps
+        self.config_file: Path = PATH / CONFIG_FILE
         self.update: bool = False
         self.message = message
         self.repo = repo
         super().__init__(message=message)
         super().load_config(config_file=self.config_file)
 
-    def build_path(self, struct_name: str, dir_name: str) -> str:
+    def build_path(self, struct_name: str, dir_name: str) -> Path:
         """
         Build a path based on structure name and a directory name.
 
@@ -575,20 +587,19 @@ class Sassy(Config):
             struct_name (str): A structure name e.i: `clean_arch`.
             dir_name (str): A directory name e.i: `applications`.
 
-        Returns (str):
+        Returns (Path):
             A path.
         """
         apps = self.apps.replace('-', '_')
-        apps_path = pathlib.Path(self.apps_path)
-        path = apps_path / apps / dir_name
+        path = self.apps_path / apps / dir_name
 
         if struct_name in self.ROOT_DIRS:
-            path = apps_path / dir_name
+            path = self.apps_path / dir_name
 
-        return os.path.abspath(path)
+        return path
 
     @staticmethod
-    def _get_file_dto(files: Union[Dict[str, Any], str]) -> Optional[File]:
+    def _get_file_dto(files: Union[Dict[str, Any], str]) -> File:
         """
         Get a ``File`` :abbr:`DTO (Data Transfer Object)`.
 
@@ -598,9 +609,12 @@ class Sassy(Config):
         Returns (File):
             A ``File`` :abbr:`DTO (Data Transfer Object)`.
         """
+        # Only a file name
         if isinstance(files, str):
             return File(name=files)
-        elif isinstance(files, dict):
+
+        # A file name and his content
+        if isinstance(files, dict):
             for f, c in files.items():
                 return File(name=f, content=c)
 
@@ -611,15 +625,16 @@ class Sassy(Config):
         Returns (list[Struct]):
             A list of ``Struct`` :abbr:`DTO (Data Transfer Object)`.
         """
-        s = self.cfg[self.STRUCTURE] if self.STRUCTURE in self.cfg else {}
+        structures: Dict[str, Any] = \
+            self.cfg[self.STRUCTURE] if self.STRUCTURE in self.cfg else {}
         dto = []
 
-        for k, v in s.items():
-            dirs = v[self.DIRS] if self.DIRS in v else []
-            files = v[self.FILES] if self.FILES in v else []
-            files_dto = [self._get_file_dto(f) for f in files]
-
+        for k, v in structures.items():
+            dirs: List[str] = v[self.DIRS] if self.DIRS in v else []
+            files: List[str] = v[self.FILES] if self.FILES in v else []
+            files_dto: List[File] = [self._get_file_dto(f) for f in files]
             dto.append(Struct(name=k, dirs=dirs, files=files_dto))
+
         return dto
 
     def _get_feature_structure_dto(self) -> List[Struct]:
@@ -629,34 +644,38 @@ class Sassy(Config):
         Returns (list[Struct]):
             A list of `Struct` :abbr:`DTO (Data Transfer Object)`.
         """
-        s = self._get_struct_dto()
-        f = self.cfg[self.FEATURE] if self.FEATURE in self.cfg else {}
-        feats = []
+        structs: List[Struct] = self._get_struct_dto()
+        features: Dict[str, Any] = \
+            self.cfg[self.FEATURE] if self.FEATURE in self.cfg else {}
+        feature_structures = []
 
-        for k, v in f.items():
-            d = v[self.DIRS] if self.DIRS in v else []
+        for k, v in features.items():
+            directories: List[str] = v[self.DIRS] if self.DIRS in v else []
             dirs = []
-            for struct in s:
-                if struct.name in d:
+            for struct in structs:
+                if struct.name in directories:
                     dirs = struct.dirs
                     break
 
-            files = v[self.FILES] if self.FILES in v else []
-            files_dto = [self._get_file_dto(f) for f in files]
+            files:  List[str] = v[self.FILES] if self.FILES in v else []
+            files_dto: List[File] = [self._get_file_dto(f) for f in files]
 
-            feats.append(Struct(name=k, dirs=dirs, files=files_dto))
+            feature_structures.append(
+                Struct(name=k, dirs=dirs, files=files_dto))
 
-        return feats
+        return feature_structures
 
     def create_structure(self) -> Result:
         """
         Create a clean architecture structure.
 
-        Returns (List[str]):
-            The list of directories created.
+        Returns:
+            Result :abbr:`DTO (Data Transfer Object)`.
+              - ok, `Message` :abbr:`DTO (Data Transfer Object)`.
+              - err, `Message` :abbr:`DTO (Data Transfer Object)`.
         """
         apps_keyword = {self.cfg[self.APPS]: self.apps}
-        repo_name = None
+        repo_path_name: Optional[Path] = None
         dirs_and_files = []
 
         for struct in self._get_struct_dto():
@@ -664,31 +683,33 @@ class Sassy(Config):
             dirs = struct.dirs if struct.dirs else ['']
 
             for dir_name in dirs:
-                path = self.build_path(
+                path: Path = self.build_path(
                     struct_name=struct.name, dir_name=dir_name)
 
                 result: Result = self.create_dir(name=path)
                 if result.err:
                     return result
 
-                if not repo_name:
-                    repo_name = path
+                if not repo_path_name:
+                    repo_path_name = path
                 else:
                     dirs_and_files.append(path)
 
                 # create file
                 for file in struct.files:
-                    file_name = file.replace_file_name(apps_keyword)
-                    content = file.replace_content(apps_keyword)
-                    file_path = os.path.abspath(pathlib.Path(path) / file_name)
+                    file_name: str = file.replace_file_name(apps_keyword)
+                    content: str = file.replace_content(apps_keyword)
+                    file_path: Path = path / file_name
                     files = {file_path: content}
                     dirs_and_files.append(file_path)
 
                     self.create_file(files=files)
 
-        if repo_name:
+        if repo_path_name:
+            repo_name: str = abspath(repo_path_name)
+            items: List[str] = [abspath(d) for d in dirs_and_files]
             repo_apps = InitRepo(repo=self.repo, message=self.message)
-            repo_apps(repo_name=repo_name, items=dirs_and_files)
+            repo_apps(repo_name=repo_name, items=items)
 
     def create_feature(self, feature: str) -> None:
         """
@@ -705,14 +726,14 @@ class Sassy(Config):
 
         for struct in self._get_feature_structure_dto():
             for dir_name in struct.dirs:
-                path = self.build_path(
+                path: Path = self.build_path(
                     struct_name=struct.name, dir_name=dir_name)
 
                 # create file
                 for file in struct.files:
-                    file_name = file.replace_file_name(feat_keyword)
-                    content = file.replace_content(feat_keyword)
-                    file_path = os.path.abspath(pathlib.Path(path) / file_name)
+                    file_name: str = file.replace_file_name(feat_keyword)
+                    content: str = file.replace_content(feat_keyword)
+                    file_path: Path = path / file_name
                     files = {file_path: content}
 
                     self.create_file(files=files)
@@ -731,22 +752,22 @@ class Sassy(Config):
 
         for struct in self._get_feature_structure_dto():
             for dir_name in struct.dirs:
-                path = self.build_path(
+                path: Path = self.build_path(
                     struct_name=struct.name, dir_name=dir_name)
 
                 # create file
                 for file in struct.files:
-                    file_name = file.replace_file_name(payload)
-                    file_path = os.path.abspath(pathlib.Path(path) / file_name)
+                    file_name: str = file.replace_file_name(payload)
+                    file_path: Path = path / file_name
                     self.delete_file(file=file_path)
 
     @MessageLogger(show='all')
-    def create_file(self, files: Dict[str, Any]) -> Result:
+    def create_file(self, files: Dict[Path, Any]) -> Result:
         """
         Create a file and add content.
 
         Args:
-            files: A file name
+            files (dict[Path, Any]): A file name
 
         Returns:
             Result :abbr:`DTO (Data Transfer Object)`.
@@ -756,32 +777,31 @@ class Sassy(Config):
         result = Result()
 
         for file, content in files.items():
-
-            if os.path.isfile(file) and not self.update:
-                result.err = self.message.msg(name='file_exists', extra=file)
+            if file.is_file() and not self.update:
+                result.err = self.message.msg(
+                    name='file_exists', extra=str(file))
                 return result
 
             try:
-                with open(file, 'w') as f:
-                    if content:
-                        f.write(content + "\n")
-
-                result.ok = self.message.msg(name='file_create_ok', extra=file)
+                file.touch()
+                file.write_text(content + "\n")
+                result.ok = self.message.msg(
+                    name='file_create_ok', extra=str(file))
 
             except Exception as exc:
                 result.err = self.message.msg(
-                    name='file_create_failed', extra=file)
+                    name='file_create_failed', extra=str(file))
                 result.err.text += f" {exc}"
 
             return result
 
     @MessageLogger(show='all')
-    def delete_file(self, file: str) -> Result:
+    def delete_file(self, file: Path) -> Result:
         """
         Delete a file.
 
         Args:
-            file: The file name
+            file (Path): The file name
 
         Returns:
             Result :abbr:`DTO (Data Transfer Object)`.
@@ -790,28 +810,30 @@ class Sassy(Config):
         """
         result = Result()
 
-        if not os.path.isfile(file):
-            result.err = self.message.msg(name='file_not_exist', extra=file)
+        if not file.is_file():
+            result.err = self.message.msg(
+                name='file_not_exist', extra=str(file))
             return result
 
         try:
-            os.remove(file)
-            result.ok = self.message.msg(name='file_delete_ok', extra=file)
+            file.unlink()
+            result.ok = self.message.msg(
+                name='file_delete_ok', extra=str(file))
 
         except Exception as exc:
             result.err = self.message.msg(
-                name='file_delete_failed', extra=file)
+                name='file_delete_failed', extra=str(file))
             result.err.text += f" {exc}"
 
         return result
 
     @MessageLogger(show='all')
-    def create_dir(self, name: Optional[str] = None) -> Result:
+    def create_dir(self, name: Optional[Path] = None) -> Result:
         """
         Create a directory.
 
         Args:
-            name: A directory name.
+            name (Path): A directory name.
 
         Returns:
             Result :abbr:`DTO (Data Transfer Object)`.
@@ -823,16 +845,17 @@ class Sassy(Config):
         if not name:
             name = self.apps_path
 
-        if os.path.isdir(name) and not self.update:
-            result.err = self.message.msg(name='dir_exists', extra=name)
+        if name.is_dir() and not self.update:
+            result.err = self.message.msg(name='dir_exists', extra=str(name))
             return result
 
         try:
-            os.makedirs(name=name)
-        except OSError:
-            result.err = self.message.msg(name='dir_create_failed', extra=name)
+            name.mkdir(parents=True)
+        except (FileExistsError, FileNotFoundError):
+            result.err = self.message.msg(
+                name='dir_create_failed', extra=str(name))
         else:
-            result.ok = self.message.msg(name='dir_create_ok', extra=name)
+            result.ok = self.message.msg(name='dir_create_ok', extra=str(name))
 
         return result
 
