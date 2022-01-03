@@ -1,14 +1,11 @@
 Providers
 =========
 
-.. currentmodule:: _sassy.p_sassy
+.. currentmodule:: _sassy.__init__
 
 .. autosummary::
    :recursive:
    :toctree: generated
-
-    Logger
-    Logger.show
 
     MessageService
     MessageService.load_messages

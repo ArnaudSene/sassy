@@ -1,3 +1,10 @@
+# 0.1.2
+## refacto
+
+- move all code into __init__.py file.
+- rewrite logger with config file. 
+
+---
 # 0.1.1
 ## fix pathlib
 

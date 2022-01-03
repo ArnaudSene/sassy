@@ -1,13 +1,11 @@
 Interfaces
 ==========
 
-.. currentmodule:: _sassy.i_sassy
+.. currentmodule:: _sassy.__init__
 
 .. autosummary::
    :recursive:
    :toctree: generated
 
-    LoggerInterface
-    LoggerInterface.show
     MessagesInterface.msg
     RepoInterface.init

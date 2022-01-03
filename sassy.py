@@ -12,8 +12,7 @@ import os
 import sys
 import textwrap
 
-from _sassy.a_sassy import Sassy
-from _sassy.p_sassy import MessageService, RepoProvider
+from _sassy import MessageService, RepoProvider, Sassy
 
 
 class Parser:
@@ -92,4 +91,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
