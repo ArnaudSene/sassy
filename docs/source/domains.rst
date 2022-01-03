@@ -1,7 +1,7 @@
 Domains
 =======
 
-.. currentmodule:: _sassy.d_sassy
+.. currentmodule:: _sassy.__init__
 
 .. autosummary::
    :recursive:

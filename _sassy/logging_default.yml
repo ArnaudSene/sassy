@@ -1,0 +1,18 @@
+version: 1
+
+formatters:
+  colored:
+    class: colorlog.ColoredFormatter
+    format: '%(log_color)s%(message)s%(reset)s'
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: colored
+
+root:
+  level: DEBUG
+  handlers:
+    - console
+
