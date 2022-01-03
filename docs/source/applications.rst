@@ -1,7 +1,7 @@
 Applications
 -------------
 
-.. currentmodule:: _sassy.a_sassy
+.. currentmodule:: _sassy.__init__
 
 .. autosummary::
    :recursive:

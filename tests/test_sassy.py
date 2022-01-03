@@ -13,10 +13,10 @@ from unittest.mock import patch, mock_open, call
 import git
 import pytest
 
-from _sassy.a_sassy import InitRepo, Config, Sassy, MessageLogger
-from _sassy.d_sassy import Message, File, Result
-from _sassy.i_sassy import RepoInterface
-from _sassy.p_sassy import MessageService, RepoProvider, Logger
+from _sassy import RepoInterface, MessageService, Result, Message, \
+    MessageLogger, Config, Sassy, File, InitRepo, RepoProvider
+
+APPS_PATH = '_sassy'
 
 
 class FakeRepoProvider(RepoInterface):
@@ -48,11 +48,6 @@ class FakeRepoProvider(RepoInterface):
             raise
 
 
-APPS_PATH = '_sassy.a_sassy'
-PROVIDER_PATH = '_sassy.p_sassy'
-
-
-@patch(f"{APPS_PATH}.logger_provider.verbose", False)
 class TestSassy:
     """Main test for Sassy."""
 
@@ -183,65 +178,61 @@ class TestSassy:
 
     def test_message_logger_ok(self):
         """call logger.show with result.ok"""
-        logger = Logger(verbose=False)
         message = Message(code=999, severity='INFO')
         message.text = 'abc'
         result = Result()
         result.ok = message
 
-        @MessageLogger(logger=logger, show='all')
+        @MessageLogger(show='all')
         def foo(r):
             return r
 
-        with patch('_sassy.p_sassy.Logger.show') as mock:
+        with patch('_sassy.MessageLogger.log') as mock:
             rr = foo(result)
             mock.assert_called_with(message=result.ok)
             assert rr == result
 
     def test_message_logger_err(self):
         """call logger.show with result.err"""
-        logger = Logger(verbose=False)
         message = Message(code=999, severity='INFO')
         message.text = 'abc'
         result = Result()
         result.err = message
 
-        @MessageLogger(logger=logger, show='all')
+        @MessageLogger(show='all')
         def foo(r):
             return r
 
-        with patch('_sassy.p_sassy.Logger.show') as mock:
+        with patch('_sassy.MessageLogger.log') as mock:
             rr = foo(result)
             mock.assert_called_with(message=result.err)
             assert rr == result
 
     def test_message_logger_show_invalid(self):
         """no call logger.show because show=abc is invalid"""
-        logger = Logger(verbose=False)
         message = Message(code=999, severity='INFO')
         message.text = 'abc'
         result = Result()
         result.err = message
 
-        @MessageLogger(logger=logger, show='abc')
+        @MessageLogger(show='abc')
         def foo(r):
             return r
 
-        with patch('_sassy.p_sassy.Logger.show') as mock:
+        with patch('_sassy.MessageLogger.log') as mock:
             rr = foo(result)
             mock.assert_not_called()
             assert rr == result
 
     def test_message_logger_no_result(self):
         """return func, not a Result instance"""
-        logger = Logger(verbose=False)
         result = 'abc'
 
-        @MessageLogger(logger=logger, show='all')
+        @MessageLogger(show='all')
         def foo(r):
             return r
 
-        with patch('_sassy.p_sassy.Logger.show') as mock:
+        with patch('_sassy.MessageLogger.log') as mock:
             rr = foo(result)
             mock.assert_not_called()
             assert rr == result
@@ -300,7 +291,7 @@ class TestSassy:
     def test__get_struct_dto_not_ok(self):
         """Invalid yaml file or missing keyword. Result is []"""
         yaml_load = {'kw': 'invalid'}
-        patcher = patch(f'{APPS_PATH}._yaml.load')
+        patcher = patch(f'{APPS_PATH}.yaml.load')
         mock_cfg = patcher.start()
         mock_cfg.return_value = yaml_load
         sassy = Sassy(
@@ -311,7 +302,7 @@ class TestSassy:
 
     def test__get_struct_dto_ok(self):
         """Valid yaml file. Result is list of Struct DTO"""
-        patcher = patch(f'{APPS_PATH}._yaml.load')
+        patcher = patch(f'{APPS_PATH}.yaml.load')
         mock_cfg = patcher.start()
         mock_cfg.return_value = self.yaml_load
 
@@ -326,7 +317,7 @@ class TestSassy:
     def test__get_feature_structure_dto_not_ok(self):
         """Invalid yaml file or missing keyword. Result is []"""
         yaml_load = {'kw': 'invalid'}
-        patcher = patch(f'{APPS_PATH}._yaml.load')
+        patcher = patch(f'{APPS_PATH}.yaml.load')
         mock_cfg = patcher.start()
         mock_cfg.return_value = yaml_load
         sassy = Sassy(
@@ -337,7 +328,7 @@ class TestSassy:
 
     def test__get_feature_structure_dto_ok(self):
         """Valid yaml file. Result is list of Struct DTO"""
-        patcher = patch(f'{APPS_PATH}._yaml.load')
+        patcher = patch(f'{APPS_PATH}.yaml.load')
         mock_cfg = patcher.start()
         mock_cfg.return_value = self.yaml_load
         sassy = Sassy(
@@ -526,7 +517,7 @@ class TestSassy:
         file = File(name='fake', content=content)
         payload = {
             '__APPS__': 'replaced_value',
-            'inexist': 'nothing'
+            'not_exist': 'nothing'
         }
         assert file.replace_content(payload) == expected
 
@@ -536,13 +527,13 @@ class TestSassy:
         expected = '"""this is a test for __APPS__."""'
         file = File(name='fake', content=content)
         payload = {
-            'inexist': 'nothing'
+            'not_exist': 'nothing'
         }
         assert file.replace_content(payload) == expected
 
     def test_create_structure_ok(self):
         fake_apps = 'fake_sassy'
-        patcher = patch(f'{APPS_PATH}._yaml.load')
+        patcher = patch(f'{APPS_PATH}.yaml.load')
         mock_cfg = patcher.start()
         mock_cfg.return_value = self.yaml_load
 
@@ -601,7 +592,7 @@ class TestSassy:
 
     def test_create_feature_ok(self):
         fake_apps = 'fake_sassy'
-        patcher = patch(f'{APPS_PATH}._yaml.load')
+        patcher = patch(f'{APPS_PATH}.yaml.load')
         mock_cfg = patcher.start()
         mock_cfg.return_value = self.yaml_load
 
@@ -642,7 +633,7 @@ class TestSassy:
 
     def test_delete_feature_ok(self):
         fake_apps = 'fake_sassy'
-        patcher = patch(f'{APPS_PATH}._yaml.load')
+        patcher = patch(f'{APPS_PATH}.yaml.load')
         mock_cfg = patcher.start()
         mock_cfg.return_value = self.yaml_load
         result = Result()
@@ -712,9 +703,9 @@ class TestSassy:
 
         repo_name = 'fake_repo_name'
         items = ['dirs_1', 'files_a']
-        patcher = patch(f'{PROVIDER_PATH}.RepoProvider._git_init')
-        patcher_add = patch(f'{PROVIDER_PATH}.RepoProvider._git_add')
-        patcher_commit = patch(f'{PROVIDER_PATH}.RepoProvider._git_commit')
+        patcher = patch(f'{APPS_PATH}.RepoProvider._git_init')
+        patcher_add = patch(f'{APPS_PATH}.RepoProvider._git_add')
+        patcher_commit = patch(f'{APPS_PATH}.RepoProvider._git_commit')
         patcher.start()
         patcher_add.start()
         mock_git = patcher_commit.start()
@@ -732,55 +723,47 @@ class TestSassy:
         assert result.code == 300
 
     def test_logger_show_log_debug(self):
-        logger = Logger(verbose=True)
+        logger = MessageLogger()
         message = Message(code=999, severity='DEBUG')
-        with patch('_sassy.p_sassy.logging.Logger.debug') as mock:
-            logger.show(message=message)
+        with patch('_sassy.logging.Logger.debug') as mock:
+            logger.log(message=message)
             mock.assert_called()
 
     def test_logger_show_log_info(self):
-        logger = Logger(verbose=True)
+        logger = MessageLogger()
         message = Message(code=999, severity='INFO')
-        with patch('_sassy.p_sassy.logging.Logger.info') as mock:
-            logger.show(message=message)
+        with patch('_sassy.logging.Logger.info') as mock:
+            logger.log(message=message)
             mock.assert_called()
 
     def test_logger_show_log_warning(self):
-        logger = Logger(verbose=True)
+        logger = MessageLogger()
         message = Message(code=999, severity='WARNING')
-        with patch('_sassy.p_sassy.logging.Logger.warning') as mock:
-            logger.show(message=message)
+        with patch('_sassy.logging.Logger.warning') as mock:
+            logger.log(message=message)
             mock.assert_called()
 
     def test_logger_show_log_error(self):
-        logger = Logger(verbose=True)
+        logger = MessageLogger()
         message = Message(code=999, severity='ERROR')
-        with patch('_sassy.p_sassy.logging.Logger.error') as mock:
-            logger.show(message=message)
+        with patch('_sassy.logging.Logger.error') as mock:
+            logger.log(message=message)
             mock.assert_called()
 
     def test_logger_show_log_critical(self):
-        logger = Logger(verbose=True)
+        logger = MessageLogger()
         message = Message(code=999, severity='CRITICAL')
-        with patch('_sassy.p_sassy.logging.Logger.critical') as mock:
-            logger.show(message=message)
+        with patch('_sassy.logging.Logger.critical') as mock:
+            logger.log(message=message)
             mock.assert_called()
 
     def test_logger_show_log_other(self):
         """invalid severity, log.info is used"""
-        logger = Logger(verbose=True)
+        logger = MessageLogger()
         message = Message(code=999, severity='OTHER')
-        with patch('_sassy.p_sassy.logging.Logger.info') as mock:
-            logger.show(message=message)
+        with patch('_sassy.logging.Logger.info') as mock:
+            logger.log(message=message)
             mock.assert_called()
-
-    def test_logger_show_log_verbose_false_no_call(self):
-        """verbose false no call to any log"""
-        logger = Logger(verbose=False)
-        message = Message(code=999, severity='INFO')
-        with patch('_sassy.p_sassy.logging.Logger.info') as mock:
-            logger.show(message=message)
-            mock.assert_not_called()
 
     def test_repo_provider_git_add(self):
         repo_provider = RepoProvider()
@@ -791,7 +774,7 @@ class TestSassy:
             (100644, 'e69de29bb2d1d6434b8b29ae775ad8c2e48c5391', 0, 'abc'),
             (100644, 'e69de29bb2d1d6434b8b29ae775ad8c2e48c5391', 0, 'def')]
 
-        with patch('_sassy.p_sassy.RepoProvider._git_add') as mock:
+        with patch('_sassy.RepoProvider._git_add') as mock:
             mock.return_value = expected
             result = repo_provider._git_add(
                 repo=repo,
