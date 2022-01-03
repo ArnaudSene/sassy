@@ -192,7 +192,7 @@ class TestSassy:
             assert rr == result
 
     def test_message_logger_err(self):
-        """call logger.show with result.err"""
+        """call logger.log with result.err"""
         message = Message(code=999, severity='INFO')
         message.text = 'abc'
         result = Result()
