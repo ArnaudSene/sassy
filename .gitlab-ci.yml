@@ -11,9 +11,9 @@ stages:
 - deploy3
 - deploy
 
-image: python:3.8-slim
 
 pages:
+  image: python:3.8-slim
   stage: deploy
   script:
     - pip install -r requirements.txt
@@ -23,10 +23,11 @@ pages:
     paths:
       - public
   only:
-    - dev
+    - pushes
   tags:
     - halia
     - k8s
+
 # include:
 # - template: Security/SAST.gitlab-ci.yml
 
