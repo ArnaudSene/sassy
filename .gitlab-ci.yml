@@ -24,8 +24,9 @@ pages:
       - public
   only:
     - dev
-
-#   stage: test
+  tags:
+    - halia
+    - k8s
 # include:
 # - template: Security/SAST.gitlab-ci.yml
 
