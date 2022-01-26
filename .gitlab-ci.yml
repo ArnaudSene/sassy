@@ -9,12 +9,12 @@ stages:
 #- deploy1
 #- deploy2
 #- deploy3
-- build_doc
+- build
 
 
 pages:
   image: python:latest
-  stage: build_doc
+  stage: build
   script:
     - pip install -r requirements.txt
     - sphinx-build -d _build/doctrees . _build/html
