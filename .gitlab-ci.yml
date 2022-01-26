@@ -22,8 +22,6 @@ pages:
   artifacts:
     paths:
       - public
-  only:
-    - tags
   tags:
     - halia
     - k8s
