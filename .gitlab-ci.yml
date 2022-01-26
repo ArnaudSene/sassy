@@ -10,7 +10,20 @@ stages:
 - deploy2
 - deploy3
 
-# sast:
+image: python:3.8-slim
+
+pages:
+  stage: deploy
+  script:
+    - pip install -r requirements.txt
+    - sphinx-build -d _build/doctrees . _build/html
+    - mv _build/html public
+  artifacts:
+    paths:
+      - public
+  only:
+    - dev
+
 #   stage: test
 # include:
 # - template: Security/SAST.gitlab-ci.yml

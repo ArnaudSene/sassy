@@ -1,8 +1,12 @@
 Providers
 =========
-
 .. currentmodule:: sassy.__init__
+.. autosummary::
+   :recursive:
+   :toctree: generated
 
+Messages
+--------
 .. autosummary::
    :recursive:
    :toctree: generated
@@ -10,6 +14,12 @@ Providers
     MessageService
     MessageService.load_messages
     MessageService.msg
+
+Repo
+----
+.. autosummary::
+   :recursive:
+   :toctree: generated
 
     RepoProvider
     RepoProvider.init
