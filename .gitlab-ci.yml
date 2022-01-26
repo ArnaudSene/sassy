@@ -9,6 +9,7 @@ stages:
 - deploy1
 - deploy2
 - deploy3
+- deploy
 
 image: python:3.8-slim
 
