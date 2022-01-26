@@ -23,7 +23,7 @@ pages:
     paths:
       - public
   only:
-    - dev
+    - tags
   tags:
     - halia
     - k8s
