@@ -9,12 +9,12 @@ stages:
 - deploy1
 - deploy2
 - deploy3
-- deploy
+- build
 
 
 pages:
-  image: python:3.8-slim
-  stage: deploy
+  image: python:latest
+  stage: build
   script:
     - pip install -r requirements.txt
     - sphinx-build -d _build/doctrees . _build/html
@@ -22,8 +22,7 @@ pages:
   artifacts:
     paths:
       - public
-  only:
-    - pushes
+  when: manual
   tags:
     - halia
     - k8s
