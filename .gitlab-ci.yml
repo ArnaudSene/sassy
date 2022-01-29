@@ -17,7 +17,7 @@ pages:
   stage: build
   script:
     - pip install -r requirements.txt
-    - sphinx-build -b html docs/source build
+    - sphinx-build -b html docs/source public
   artifacts:
     paths:
       - public
