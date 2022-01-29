@@ -20,7 +20,11 @@ To create a new project, provide a `project name`:
 
 .. code-block:: console
 
-    $ python sassy new_project --create
+    $ python sassy.py new_project --create
+
+    -- OR --
+
+    $ ./sassy new_project --create
 
 
 Add a feature to your project
@@ -31,7 +35,11 @@ and a `feature name`.
 
 .. code-block:: console
 
-    $ python sassy new_project new_feature --create
+    $ python sassy.py new_project new_feature --create
+
+    -- OR --
+
+    $ ./sassy new_project new_feature --create
 
 Delete a feature in your project
 --------------------------------
@@ -41,4 +49,8 @@ and a `feature name`.
 
 .. code-block:: console
 
-    $ python sassy new_project new_feature --delete
+    $ python sassy.py new_project new_feature --delete
+
+    -- OR --
+
+    $ ./sassy new_project new_feature --delete

@@ -22,7 +22,7 @@ setup(
     long_description_content_type='text/markdown',
     url='https://gitlab.com/halia-ca/sassy',
     packages=packages,
-    package_data={'_sassy': ['*.yml']},
+    package_data={'src': ['*.yml']},
     install_requires=requirements,
     classifiers=[
         'Programming Language :: Python :: 3.9',
