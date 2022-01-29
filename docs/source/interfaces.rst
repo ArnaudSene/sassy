@@ -1,6 +1,6 @@
 Interfaces
 ==========
-.. currentmodule:: sassy.__init__
+.. currentmodule:: src.__init__
 .. autosummary::
    :recursive:
    :toctree: generated

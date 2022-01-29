@@ -27,6 +27,11 @@ pages:
     - halia
     - k8s
 
+
+
+#  Python to exe
+#  pyinstaller --noconfirm --onedir --console --add-data "/Volumes/SSD_Data/halia/Sassy/src:src/" --hidden-import "colorlog"  "/Volumes/SSD_Data/halia/Sassy/sassy.py"
+
 # include:
 # - template: Security/SAST.gitlab-ci.yml
 #
