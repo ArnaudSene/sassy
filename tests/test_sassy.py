@@ -12,10 +12,10 @@ from unittest.mock import patch, call
 from git import Repo
 from pytest import mark
 
-from sassy import RepoInterface, MessageService, Result, Message, \
+from src import RepoInterface, MessageService, Result, Message, \
     MessageLogger, Config, Sassy, File, InitRepo, RepoProvider
 
-APPS_PATH = 'sassy'
+APPS_PATH = 'src'
 
 
 class FakeRepoProvider(RepoInterface):
@@ -186,7 +186,7 @@ class TestSassy:
         def foo(r):
             return r
 
-        with patch('sassy.MessageLogger.log') as mock:
+        with patch(f'{APPS_PATH}.MessageLogger.log') as mock:
             rr = foo(result)
             mock.assert_called_with(message=result.ok)
             assert rr == result
@@ -202,7 +202,7 @@ class TestSassy:
         def foo(r):
             return r
 
-        with patch('sassy.MessageLogger.log') as mock:
+        with patch(f'{APPS_PATH}.MessageLogger.log') as mock:
             rr = foo(result)
             mock.assert_called_with(message=result.err)
             assert rr == result
@@ -218,7 +218,7 @@ class TestSassy:
         def foo(r):
             return r
 
-        with patch('sassy.MessageLogger.log') as mock:
+        with patch(f'{APPS_PATH}.MessageLogger.log') as mock:
             rr = foo(result)
             mock.assert_not_called()
             assert rr == result
@@ -231,7 +231,7 @@ class TestSassy:
         def foo(r):
             return r
 
-        with patch('sassy.MessageLogger.log') as mock:
+        with patch(f'{APPS_PATH}.MessageLogger.log') as mock:
             rr = foo(result)
             mock.assert_not_called()
             assert rr == result
@@ -700,35 +700,35 @@ class TestSassy:
     def test_logger_show_log_debug(self):
         logger = MessageLogger()
         message = Message(code=999, severity='DEBUG')
-        with patch('sassy.logging.Logger.debug') as mock:
+        with patch(f'{APPS_PATH}.logging.Logger.debug') as mock:
             logger.log(message=message)
             mock.assert_called()
 
     def test_logger_show_log_info(self):
         logger = MessageLogger()
         message = Message(code=999, severity='INFO')
-        with patch('sassy.logging.Logger.info') as mock:
+        with patch(f'{APPS_PATH}.logging.Logger.info') as mock:
             logger.log(message=message)
             mock.assert_called()
 
     def test_logger_show_log_warning(self):
         logger = MessageLogger()
         message = Message(code=999, severity='WARNING')
-        with patch('sassy.logging.Logger.warning') as mock:
+        with patch(f'{APPS_PATH}.logging.Logger.warning') as mock:
             logger.log(message=message)
             mock.assert_called()
 
     def test_logger_show_log_error(self):
         logger = MessageLogger()
         message = Message(code=999, severity='ERROR')
-        with patch('sassy.logging.Logger.error') as mock:
+        with patch(f'{APPS_PATH}.logging.Logger.error') as mock:
             logger.log(message=message)
             mock.assert_called()
 
     def test_logger_show_log_critical(self):
         logger = MessageLogger()
         message = Message(code=999, severity='CRITICAL')
-        with patch('sassy.logging.Logger.critical') as mock:
+        with patch(f'{APPS_PATH}.logging.Logger.critical') as mock:
             logger.log(message=message)
             mock.assert_called()
 
@@ -736,7 +736,7 @@ class TestSassy:
         """invalid severity, log.info is used"""
         logger = MessageLogger()
         message = Message(code=999, severity='OTHER')
-        with patch('sassy.logging.Logger.info') as mock:
+        with patch(f'{APPS_PATH}.logging.Logger.info') as mock:
             logger.log(message=message)
             mock.assert_called()
 
@@ -749,7 +749,7 @@ class TestSassy:
             (100644, 'e69de29bb2d1d6434b8b29ae775ad8c2e48c5391', 0, 'abc'),
             (100644, 'e69de29bb2d1d6434b8b29ae775ad8c2e48c5391', 0, 'def')]
 
-        with patch('sassy.RepoProvider._git_add') as mock:
+        with patch(f'{APPS_PATH}.RepoProvider._git_add') as mock:
             mock.return_value = expected
             result = repo_provider._git_add(repo=repo, items=items)
             assert result == expected

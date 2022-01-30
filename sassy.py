@@ -7,12 +7,13 @@ Contact:
   Arnaud SENE, arnaud.sene@halia.ca
   Karol KOZUBAL, karol.lozubal@halia.ca
 """
+import sys
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from os.path import basename
 from sys import argv
 from textwrap import dedent
 
-from sassy import MessageService, RepoProvider, Sassy
+from src import MessageService, RepoProvider, Sassy
 
 
 class Parser:
@@ -63,21 +64,21 @@ def main():
         if args.create:
             if len(args.names) == 1:
                 apps = args.names[0]
-                sassy = Sassy(apps=apps, message=message, repo=repo)
-                sassy.create_structure()
+                src = Sassy(apps=apps, message=message, repo=repo)
+                src.create_structure()
 
             else:
                 apps = args.names[0]
                 feature = args.names[1]
-                sassy = Sassy(apps=apps, message=message, repo=repo)
-                sassy.create_feature(feature=feature)
+                src = Sassy(apps=apps, message=message, repo=repo)
+                src.create_feature(feature=feature)
 
         elif args.delete:
             if len(args.names) == 2:
                 apps = args.names[0]
                 feature = args.names[1]
-                sassy = Sassy(apps=apps, message=message, repo=repo)
-                sassy.delete_feature(feature=feature)
+                src = Sassy(apps=apps, message=message, repo=repo)
+                src.delete_feature(feature=feature)
         else:
             print(f"Invalid arguments: {argv[1:]}!")
 

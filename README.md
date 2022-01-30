@@ -41,4 +41,4 @@ python3 sassy new_project new_feature --delete
 ```
 
 ## Documentation available in this repository at:
-https://gitlab.com/halia-ca/sassy/-/tree/main/docs/build/html/index.html
+https://halia-ca.gitlab.io/sassy

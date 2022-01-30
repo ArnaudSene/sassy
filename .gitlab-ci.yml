@@ -5,34 +5,54 @@
 # Note that environment variables can be set in several places
 # See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
 stages:
-- test
-- deploy1
-- deploy2
-- deploy3
+#- test
+#- deploy1
+#- deploy2
+#- deploy3
+- build
 
-# sast:
-#   stage: test
+
+pages:
+  image: python:latest
+  stage: build
+  script:
+    - pip install -r requirements.txt
+    - sphinx-build -b html docs/source public
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  tags:
+    - halia
+    - k8s
+
+
+
+#  Python to exe
+#  pyinstaller --noconfirm --onedir --console --add-data "/Volumes/SSD_Data/halia/Sassy/src:src/" --hidden-import "colorlog"  "/Volumes/SSD_Data/halia/Sassy/sassy.py"
+
 # include:
 # - template: Security/SAST.gitlab-ci.yml
-
-
-trigger_pipeline1:
-  stage: deploy1
-  script: 
-    - echo "deploy 1 => $CI_PIPELINE_SOURCE"
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'pipeline'
-
-trigger_pipeline2:
-  stage: deploy2
-  script: 
-    - echo "deploy 2 => $CI_PIPELINE_SOURCE"
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'trigger'
-
-trigger_pipeline3:
-  stage: deploy3
-  script: 
-    - echo "deploy 3 => $CI_PIPELINE_SOURCE"
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'other'
+#
+#
+#trigger_pipeline1:
+#  stage: deploy1
+#  script:
+#    - echo "deploy 1 => $CI_PIPELINE_SOURCE"
+#  rules:
+#    - if: $CI_PIPELINE_SOURCE == 'pipeline'
+#
+#trigger_pipeline2:
+#  stage: deploy2
+#  script:
+#    - echo "deploy 2 => $CI_PIPELINE_SOURCE"
+#  rules:
+#    - if: $CI_PIPELINE_SOURCE == 'trigger'
+#
+#trigger_pipeline3:
+#  stage: deploy3
+#  script:
+#    - echo "deploy 3 => $CI_PIPELINE_SOURCE"
+#  rules:
+#    - if: $CI_PIPELINE_SOURCE == 'other'

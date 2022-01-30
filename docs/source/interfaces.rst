@@ -1,11 +1,22 @@
 Interfaces
 ==========
+.. currentmodule:: src.__init__
+.. autosummary::
+   :recursive:
+   :toctree: generated
 
-.. currentmodule:: sassy.__init__
-
+Messages
+--------
 .. autosummary::
    :recursive:
    :toctree: generated
 
     MessagesInterface.msg
+
+Repo
+----
+.. autosummary::
+   :recursive:
+   :toctree: generated
+
     RepoInterface.init
