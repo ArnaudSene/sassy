@@ -9,11 +9,12 @@ from pathlib import Path
 from typing import List
 from unittest.mock import patch, call
 
+import pytest
 from git import Repo
 from pytest import mark
 
 from src import RepoInterface, MessageService, Result, Message, \
-    MessageLogger, Config, Sassy, File, InitRepo, RepoProvider
+    MessageLogger, Config, Sassy, File, InitRepo, RepoProvider, Struct
 
 APPS_PATH = 'src'
 
@@ -58,7 +59,7 @@ class TestSassy:
     CWD = Path(__file__).parents[1]
     SASSY_DIR = CWD / APPS_PATH
     YAML_FILE = SASSY_DIR / 'sassy.yml'
-
+    FAKE_APPS = 'src'
     sassy_dir = SASSY_DIR.resolve().as_posix()
     yaml_file = YAML_FILE.resolve().as_posix()
 
@@ -88,6 +89,10 @@ class TestSassy:
                 'files': ['test___123__.py'],
                 'dirs': ['tests']
             }
+        },
+        'args': {
+            '*a': 'apps',
+            '*t': 'tests'
         }
     }
 
@@ -304,13 +309,37 @@ class TestSassy:
         patcher = patch(f'{APPS_PATH}.load')
         mock_cfg = patcher.start()
         mock_cfg.return_value = self.yaml_load
-
         sassy = Sassy(
             apps='fakesassy', message=self.message, repo=self.repo)
         result = sassy._get_struct_dto()
         assert result[0].name == 'apps'
         assert result[0].dirs == ['apps_dir_1', 'apps_dir_2']
         assert result[0].files == [File(name='fake_file')]
+        patcher.stop()
+
+    def test__get_struct_dto_field_args_ok(self):
+        """Valid yaml file. Result is list of Struct DTO"""
+        patcher = patch(f'{APPS_PATH}.load')
+        mock_cfg = patcher.start()
+        mock_cfg.return_value = self.yaml_load
+        sassy = Sassy(
+            apps='fakesassy', message=self.message, repo=self.repo)
+        result = sassy._get_struct_dto(field='features')
+        assert result[0].name == 'apps'
+        assert result[0].dirs == ['apps',]
+        assert result[0].files == [File(name='__123__.py')]
+        patcher.stop()
+
+    def test__get_struct_dto_field_args_invalid_ko(self):
+        """Valid yaml file. Result is an empty list"""
+        patcher = patch(f'{APPS_PATH}.load')
+        mock_cfg = patcher.start()
+        mock_cfg.return_value = self.yaml_load
+        sassy = Sassy(
+            apps='fakesassy', message=self.message, repo=self.repo)
+        result = sassy._get_struct_dto(field='bad')
+        assert isinstance(result, list)
+        assert not result
         patcher.stop()
 
     def test__get_feature_structure_dto_not_ok(self):
@@ -336,6 +365,29 @@ class TestSassy:
         assert result[0].name == 'apps'
         assert result[0].dirs == ['apps_dir_1', 'apps_dir_2']
         assert result[0].files == [File(name='__123__.py', content='')]
+        patcher.stop()
+
+    @pytest.mark.parametrize('dirname, directories, expected', [
+        ('fake_dir', None, True),
+        ('fake_dir', [], True),
+        ('fake_dir', ['fake_dir'], True),
+        ('test/fake_dir', ['fake_dir'], True),
+        ('test/fake_dir', ['fake_dir_1'], False),
+        ('apps', ['*a'], True),
+        ('apps', ['*z'], False),
+    ])
+    def test_is_selected_directory_directories_given_true(
+            self, dirname, directories, expected):
+        patcher = patch(f'{APPS_PATH}.load')
+        mock_cfg = patcher.start()
+        mock_cfg.return_value = self.yaml_load
+
+        sassy = Sassy(
+            apps='fakesassy', message=self.message, repo=self.repo)
+
+        result = sassy.is_valid_directory(
+            directory=dirname, directories=directories)
+        assert result is expected
         patcher.stop()
 
     def tests_create_dir_already_exist(self):
@@ -523,7 +575,8 @@ class TestSassy:
 
         result = Result()
         result.ok = 'this is ok'
-        sassy = Sassy(apps=fake_apps, message=self.message, repo=self.repo)
+        sassy = Sassy(
+            apps=fake_apps, message=self.message, repo=self.repo)
 
         dir_patcher = patch(f'{APPS_PATH}.Sassy.create_dir')
         file_patcher = patch(f'{APPS_PATH}.Sassy.create_file')
@@ -544,7 +597,7 @@ class TestSassy:
         test_dirs = structures['tests']['dirs']
 
         _path = Path(__file__).parents[1]
-        apps_path = _path / fake_apps / fake_apps
+        apps_path = _path / fake_apps / self.FAKE_APPS
         tests_path = _path / fake_apps
 
         # Create Dirs
@@ -596,7 +649,7 @@ class TestSassy:
         test_dirs = structure['tests']['dirs']
 
         #
-        apps_path = self.CWD / fake_apps / fake_apps
+        apps_path = self.CWD / fake_apps / self.FAKE_APPS
         tests_path = self.CWD / fake_apps
 
         apps_dir_calls = [
@@ -607,6 +660,76 @@ class TestSassy:
             call(files={
                 tests_path/test_dir/f"{test_fake_feature}.py": ''})
             for test_dir in test_dirs]
+        file_calls = apps_dir_calls + test_dir_calls
+
+        mock_create_file.assert_has_calls(file_calls, any_order=True)
+
+        file_patcher.stop()
+        patcher.stop()
+
+    def test__get_args_ok(self):
+        fake_apps = 'fakesassy'
+        patcher = patch(f'{APPS_PATH}.load')
+        mock_cfg = patcher.start()
+        mock_cfg.return_value = self.yaml_load
+
+        sassy = Sassy(apps=fake_apps, message=self.message, repo=self.repo)
+        args = sassy._get_args()
+        assert args == self.yaml_load['args']
+        patcher.stop()
+
+    @pytest.mark.parametrize('idx, dirs', [
+        (1, ['invalid_dirname']),
+        (2, []),
+        (3, ['apps_dir_1'])
+    ])
+    def test_create_feature__with_kwargs_ok(self, idx, dirs):
+        fake_apps = 'fakesassy'
+        patcher = patch(f'{APPS_PATH}.load')
+        mock_cfg = patcher.start()
+        mock_cfg.return_value = self.yaml_load
+
+        result = Result()
+        result.ok = 'this is ok'
+        sassy = Sassy(apps=fake_apps, message=self.message, repo=self.repo)
+        file_patcher = patch(f'{APPS_PATH}.Sassy.create_file')
+
+        mock_create_file = file_patcher.start()
+        mock_create_file.return_value = result
+        fake_feature = 'fake_feature'
+        test_fake_feature = f'test_{fake_feature}'
+        directories = {'directories': dirs}
+
+        sassy.create_feature(feature=fake_feature, **directories)
+        # from fake yaml file
+        structure = self.yaml_load['structure']
+        apps_dirs = structure['apps']['dirs']
+        test_dirs = structure['tests']['dirs']
+
+        #
+        apps_path = self.CWD / fake_apps / self.FAKE_APPS
+        tests_path = self.CWD / fake_apps
+        apps_dir_calls = []
+        test_dir_calls = []
+        if idx == 1:
+            apps_dir_calls = []
+            test_dir_calls = []
+        elif idx == 2:
+            apps_dir_calls = [
+                call(files={
+                    apps_path/apps_dir/f"{fake_feature}.py": ''})
+                for apps_dir in apps_dirs]
+            test_dir_calls = [
+                call(files={
+                    tests_path/test_dir/f"{test_fake_feature}.py": ''})
+                for test_dir in test_dirs]
+        elif idx == 3:
+            apps_dir_calls = [
+                call(files={
+                    apps_path/apps_dir/f"{fake_feature}.py": ''})
+                for apps_dir in dirs]
+            test_dir_calls = []
+
         file_calls = apps_dir_calls + test_dir_calls
 
         mock_create_file.assert_has_calls(file_calls, any_order=True)
@@ -632,7 +755,7 @@ class TestSassy:
         structure = self.yaml_load['structure']
         apps_dirs = structure['apps']['dirs']
         test_dirs = structure['tests']['dirs']
-        apps_path = self.CWD / fake_apps / fake_apps
+        apps_path = self.CWD / fake_apps / self.FAKE_APPS
         tests_path = self.CWD / fake_apps
 
         apps_dir_calls = [
@@ -641,6 +764,58 @@ class TestSassy:
         test_dir_calls = [
             call(file=tests_path/test_dir/f"{test_fake_feature}.py")
             for test_dir in test_dirs]
+        file_calls = apps_dir_calls + test_dir_calls
+
+        mock_delete_file.assert_has_calls(file_calls, any_order=True)
+        file_patcher.stop()
+        patcher.stop()
+
+    @pytest.mark.parametrize('idx, dirs', [
+        (1, ['invalid_dirname']),
+        (2, []),
+        (3, ['apps_dir_1'])
+    ])
+    def test_delete_feature_with_kwargs_ok(self, idx, dirs):
+        fake_apps = 'fakesassy'
+        patcher = patch(f'{APPS_PATH}.load')
+        mock_cfg = patcher.start()
+        mock_cfg.return_value = self.yaml_load
+        result = Result()
+        result.ok = 'this is ok'
+        sassy = Sassy(apps=fake_apps, message=self.message, repo=self.repo)
+        file_patcher = patch(f'{APPS_PATH}.Sassy.delete_file')
+        mock_delete_file = file_patcher.start()
+        mock_delete_file.return_value = result
+        directories = {'directories': dirs}
+
+        sassy.delete_feature(feature='fake_feature', **directories)
+
+        fake_feature = 'fake_feature'
+        test_fake_feature = f'test_{fake_feature}'
+        structure = self.yaml_load['structure']
+        apps_dirs = structure['apps']['dirs']
+        test_dirs = structure['tests']['dirs']
+        apps_path = self.CWD / fake_apps / self.FAKE_APPS
+        tests_path = self.CWD / fake_apps
+
+        apps_dir_calls = []
+        test_dir_calls = []
+        if idx == 1:
+            apps_dir_calls = []
+            test_dir_calls = []
+        elif idx == 2:
+            apps_dir_calls = [
+                call(file=apps_path/apps_dir/f"{fake_feature}.py")
+                for apps_dir in apps_dirs]
+            test_dir_calls = [
+                call(file=tests_path/test_dir/f"{test_fake_feature}.py")
+                for test_dir in test_dirs]
+        elif idx == 3:
+            apps_dir_calls = [
+                call(file=apps_path/apps_dir/f"{fake_feature}.py")
+                for apps_dir in dirs]
+            test_dir_calls = []
+
         file_calls = apps_dir_calls + test_dir_calls
 
         mock_delete_file.assert_has_calls(file_calls, any_order=True)
