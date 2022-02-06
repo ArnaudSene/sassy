@@ -555,6 +555,7 @@ class Sassy(Config):
     FILES = 'files'
     APPS = 'apps'
     FEAT = 'feature'
+    ARGS = 'args'
 
     def __init__(
             self,
@@ -590,8 +591,8 @@ class Sassy(Config):
         Returns (Path):
             A path.
         """
-        apps = self.apps.replace('-', '_')
-        path = self.apps_path / apps / dir_name
+        sub_dir = 'src'
+        path = self.apps_path / sub_dir / dir_name
 
         if struct_name in self.ROOT_DIRS:
             path = self.apps_path / dir_name
@@ -618,20 +619,31 @@ class Sassy(Config):
             for f, c in files.items():
                 return File(name=f, content=c)
 
-    def _get_struct_dto(self) -> List[Struct]:
+    def _get_args(self) -> Dict[str, str]:
         """
-        Get the structure dataset.
+        Get args dataset.
+
+        Returns (dict):
+            A dict of args
+        """
+        return self.cfg.get(self.ARGS, {})
+
+    def _get_struct_dto(self, field: str = STRUCTURE) -> List[Struct]:
+        """
+        Get a structure dataset.
+
+        Args:
+            field: The field to extract the structure
 
         Returns (list[Struct]):
             A list of ``Struct`` :abbr:`DTO (Data Transfer Object)`.
         """
-        structures: Dict[str, Any] = \
-            self.cfg[self.STRUCTURE] if self.STRUCTURE in self.cfg else {}
+        structures: Dict[str, Any] = self.cfg.get(field, {})
         dto = []
 
         for k, v in structures.items():
-            dirs: List[str] = v[self.DIRS] if self.DIRS in v else []
-            files: List[str] = v[self.FILES] if self.FILES in v else []
+            dirs: List[str] = v.get(self.DIRS, [])
+            files: List[str] = v.get(self.FILES, [])
             files_dto: List[File] = [self._get_file_dto(f) for f in files]
             dto.append(Struct(name=k, dirs=dirs, files=files_dto))
 
@@ -639,30 +651,27 @@ class Sassy(Config):
 
     def _get_feature_structure_dto(self) -> List[Struct]:
         """
-            Get the feature structure dataset.
+        Get the feature structure dataset.
 
         Returns (list[Struct]):
             A list of `Struct` :abbr:`DTO (Data Transfer Object)`.
         """
-        structs: List[Struct] = self._get_struct_dto()
-        features: Dict[str, Any] = \
-            self.cfg[self.FEATURE] if self.FEATURE in self.cfg else {}
         feature_structures = []
+        structs: List[Struct] = self._get_struct_dto()
+        features: List[Struct] = self._get_struct_dto(field=self.FEATURE)
 
-        for k, v in features.items():
-            directories: List[str] = v[self.DIRS] if self.DIRS in v else []
+        for feat_struct in features:
+            feat_directories: List[str] = feat_struct.dirs
+            feat_files: List[File] = feat_struct.files
+
             dirs = []
             for struct in structs:
-                if struct.name in directories:
+                if struct.name in feat_directories:
                     dirs = struct.dirs
                     break
 
-            files:  List[str] = v[self.FILES] if self.FILES in v else []
-            files_dto: List[File] = [self._get_file_dto(f) for f in files]
-
             feature_structures.append(
-                Struct(name=k, dirs=dirs, files=files_dto))
-
+                Struct(name=feat_struct.name, dirs=dirs, files=feat_files))
         return feature_structures
 
     def create_structure(self) -> Result:
@@ -711,12 +720,44 @@ class Sassy(Config):
             repo_apps = InitRepo(repo=self.repo, message=self.message)
             repo_apps(repo_name=repo_name, items=items)
 
-    def create_feature(self, feature: str) -> None:
+    def is_valid_directory(
+            self,
+            directory: str,
+            directories: Optional[List[str]] = None
+    ) -> bool:
+        """
+        Check if directory exist in directories. This method returns True \
+        if directory is in directories.
+
+        Args:
+            directory (str): The directory to handle
+            directories (list): Directories used as filter
+
+        Returns (bool):
+        """
+        if directories is None or not directories:
+            return True
+
+        for dirname in directories:
+            if dirname.startswith('*'):
+                args = self._get_args()
+                dirname = args.get(dirname, 'invalid')
+
+            if directory.endswith(dirname):
+                return True
+        return False
+
+    def create_feature(self, feature: str, **kwargs) -> None:
         """
         Create a clean architecture feature structure.
 
         Args:
             feature (str): A feature name.
+            kwargs (dict): must be a dict like:
+
+            ```
+                {"directories": ['dirname_a']}
+            ```
 
         Returns:
             None
@@ -726,9 +767,11 @@ class Sassy(Config):
 
         for struct in self._get_feature_structure_dto():
             for dir_name in struct.dirs:
+                if not self.is_valid_directory(directory=dir_name, **kwargs):
+                    continue
+
                 path: Path = self.build_path(
                     struct_name=struct.name, dir_name=dir_name)
-
                 # create file
                 for file in struct.files:
                     file_name: str = file.replace_file_name(feat_keyword)
@@ -738,12 +781,17 @@ class Sassy(Config):
 
                     self.create_file(files=files)
 
-    def delete_feature(self, feature: str) -> None:
+    def delete_feature(self, feature: str, **kwargs) -> None:
         """
         Delete a clean architecture feature structure.
 
         Args:
             feature (str): A feature name.
+            kwargs (dict): must be a dict like:
+
+            ```
+                {"directories": ['dirname_a']}
+            ```
 
         Returns:
             None
@@ -752,6 +800,9 @@ class Sassy(Config):
 
         for struct in self._get_feature_structure_dto():
             for dir_name in struct.dirs:
+                if not self.is_valid_directory(directory=dir_name, **kwargs):
+                    continue
+
                 path: Path = self.build_path(
                     struct_name=struct.name, dir_name=dir_name)
 
