@@ -21,6 +21,7 @@
       ~Sassy.create_structure
       ~Sassy.delete_feature
       ~Sassy.delete_file
+      ~Sassy.is_valid_directory
       ~Sassy.load_config
    
    
@@ -32,6 +33,7 @@
    .. autosummary::
    
       ~Sassy.APPS
+      ~Sassy.ARGS
       ~Sassy.DIRS
       ~Sassy.FEAT
       ~Sassy.FEATURE

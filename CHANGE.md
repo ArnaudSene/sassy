@@ -1,3 +1,17 @@
+# 0.1.6
+## gitlab-ci update
+
+- update names
+- update rules
+
+---
+# 0.1.5
+## gitlab-ci update
+
+- new stages in gitlab-ci
+- utilization of a image inside container registry
+
+---
 # 0.1.4
 ## New feature: 
 
