@@ -8,17 +8,15 @@ stages:
   - merge-request
   - build-docs
   - deploy
-  - trigger
+
 
 default:
-#  image: python:latest
   image: registry.gitlab.com/halia-ca/pypi:latest
 
 before_script:
   - pip install -r requirements.txt
 
-pages:
-#  image: python:latest
+build-docs-main:
   stage: build-docs
   script:
     - sphinx-build -b html docs/source public
@@ -26,10 +24,11 @@ pages:
     paths:
       - public
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH
   tags:
     - halia
     - k8s
+
 
 merge-request-no-main:
   stage: merge-request
@@ -45,6 +44,7 @@ merge-request-no-main:
   artifacts:
     reports:
       cobertura: coverage.xml
+
 
 merge-request-main:
   stage: merge-request
@@ -74,7 +74,7 @@ deploy:
     - python3 setup.py sdist bdist_wheel
     - python3 -m twine upload --skip-existing --repository gitlab dist/*-py3-none-any.whl
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME != $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_BRANCH && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != 'trigger'
   artifacts:
     reports:
       cobertura: coverage.xml
