@@ -5,3 +5,7 @@ pytest==6.2.5
 PyYAML==6.0
 Sphinx==4.3.1
 sphinx-rtd-theme==1.0.0
+flake8==4.0.1
+pydocstyle==6.1.1
+coverage==6.1.2
+twine==3.6.0

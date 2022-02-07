@@ -1,3 +1,29 @@
+# 0.1.5
+## gitlab-ci update
+
+- new stages in gitlab-ci
+- utilization of a image inside container registry
+
+---
+# 0.1.4
+## New feature: 
+
+- replace sub dir from apps name to src
+- create or delete a module by selecting target directories
+  - *a = applications
+  - *d = domains
+  - *i = interfaces
+  - *p = providers
+  
+  ####Example:
+    
+    To `create` a `module_name` inside `apps_name` project for `applications` and `domains` directories 
+  ```
+  sassy.py apps_name module_name *a,*d --create
+  ``` 
+
+
+---
 # 0.1.3
 ## code refactor
 

@@ -60,3 +60,12 @@ features:
       - tests
     files:
       - test___FEAT__.py: '"""Unit tests for __FEAT__."""'
+
+args:
+  "*a": applications
+  "*d": domains
+  "*i": interfaces
+  "*p": providers
+  "*api": apis
+  "*cfg": configs
+  "*c": core
