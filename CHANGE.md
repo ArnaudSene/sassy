@@ -1,3 +1,10 @@
+# 0.1.6
+## gitlab-ci update
+
+- update names
+- update rules
+
+---
 # 0.1.5
 ## gitlab-ci update
 
