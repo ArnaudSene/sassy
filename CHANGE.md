@@ -1,3 +1,9 @@
+# 0.1.8
+## update: gitlab-ci
+
+- update build-docs with same behavior as deploy-prod
+
+---
 # 0.1.7
 ## update: gitlab-ci add gitlab-dev
 
