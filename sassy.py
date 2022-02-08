@@ -7,12 +7,24 @@ Contact:
   Arnaud SENE, arnaud.sene@halia.ca
   Karol KOZUBAL, karol.lozubal@halia.ca
 """
+import sys
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from os.path import basename
 from sys import argv
 from textwrap import dedent
 
 from src import MessageService, RepoProvider, Sassy
+
+
+def get_version() -> str:
+    """
+    Get the version number from VERSION.
+
+    Returns (str):
+        The version number
+    """
+    with open('VERSION', 'r') as f:
+        return f.read()
 
 
 class Parser:
@@ -62,6 +74,12 @@ class Parser:
             action='store_const',
             const=True,
             help='Delete a feature')
+
+        self.parser.add_argument(
+            '--version', '-v',
+            action='version',
+            version=get_version(),
+            help="Show sassy's version")
 
     def __call__(self):
         """Parse arguments."""
@@ -113,7 +131,7 @@ def main():
                 src = Sassy(apps=apps, message=message, repo=repo)
                 src.delete_feature(feature=feature, **directories)
         else:
-            print(f"Invalid arguments: {argv[1:]}!")
+            sys.stdout.write(f"Invalid arguments: {argv[1:]}!")
 
     except Exception as exc:
         print(f'{exc}')
