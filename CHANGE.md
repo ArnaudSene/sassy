@@ -1,3 +1,10 @@
+# 0.1.12
+## update: Update docs and readme
+
+- Update usage.rst
+- Update README.md
+
+---
 # 0.1.11
 ## feat: replace absolute by relative path
 
