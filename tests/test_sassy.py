@@ -56,7 +56,8 @@ class TestSassy:
     _VERBOSE = False
 
     TESTS_DIR = Path(__file__).parents[0]
-    CWD = Path(__file__).parents[1]
+    # CWD = Path(__file__).parents[1]
+    CWD = Path('.')
     SASSY_DIR = CWD / APPS_PATH
     YAML_FILE = SASSY_DIR / 'sassy.yml'
     FAKE_APPS = 'src'
@@ -596,9 +597,8 @@ class TestSassy:
         other_files = structures['other']['files']
         test_dirs = structures['tests']['dirs']
 
-        _path = Path(__file__).parents[1]
-        apps_path = _path / fake_apps / self.FAKE_APPS
-        tests_path = _path / fake_apps
+        apps_path = self.CWD / fake_apps / self.FAKE_APPS
+        tests_path = self.CWD / fake_apps
 
         # Create Dirs
         apps_dir_calls = [

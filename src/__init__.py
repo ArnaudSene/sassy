@@ -34,7 +34,8 @@ from yaml import load, Loader
 from yaml.parser import ParserError
 
 PATH = Path(__file__).parent
-ROOT_PATH = PATH.parent
+ROOT_PATH = Path('.')
+
 MESSAGES_FILE = PATH / 'messages.yml'
 LOG_CONF_FILE = "logging_default.yml"
 CONFIG_FILE = 'sassy.yml'
