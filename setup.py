@@ -22,7 +22,10 @@ setup(
     long_description_content_type='text/markdown',
     url='https://gitlab.com/halia-ca/sassy',
     packages=packages,
-    package_data={'src': ['*.yml']},
+    package_data={
+        'src': ['*.yml'],
+        '': ['VERSION', 'README.md', 'CHANGE.md', 'LICENSE', 'AUTHORS.md'],
+    },
     install_requires=requirements,
     entry_points={
         'console_scripts': [

@@ -1,3 +1,9 @@
+# 0.1.15
+## fix: update setup.py 
+
+- Include 'VERSION', 'README.md', 'CHANGE.md', 'LICENSE', 'AUTHORS.md' in package_data 
+
+---
 # 0.1.14
 ## fix: read VERSION file
 
