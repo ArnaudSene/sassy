@@ -24,6 +24,11 @@ setup(
     packages=packages,
     package_data={'src': ['*.yml']},
     install_requires=requirements,
+    entry_point={
+        'console_scripts': [
+            'sassy = sassy:main'
+        ]
+    },
     classifiers=[
         'Programming Language :: Python :: 3.9',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
