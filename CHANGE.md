@@ -1,3 +1,10 @@
+# 0.1.7
+## update: gitlab-ci add gitlab-dev
+
+- add gitlab-dev for pypi_dev package registry
+- rename main to prod 
+
+---
 # 0.1.6
 ## gitlab-ci update
 
