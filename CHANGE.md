@@ -1,3 +1,9 @@
+# 0.1.11
+## feat: replace absolute by relative path
+
+- Allow a project to be created from the relative path 
+
+---
 # 0.1.10
 ## fix: setup.py
 
