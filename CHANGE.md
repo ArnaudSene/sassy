@@ -1,3 +1,9 @@
+# 0.1.14
+## fix: read VERSION file
+
+- read VERSION file not matter where sassy is executed
+
+---
 # 0.1.13
 ## feat: Add version in args options
 
