@@ -24,9 +24,9 @@ setup(
     packages=packages,
     package_data={'src': ['*.yml']},
     install_requires=requirements,
-    entry_point={
+    entry_points={
         'console_scripts': [
-            'sassy = sassy:main'
+            'sassy = sassy:main',
         ]
     },
     classifiers=[

@@ -1,3 +1,9 @@
+# 0.1.10
+## fix: setup.py
+
+- replace entry_point by entry_points
+
+---
 # 0.1.9
 ## update: setup.py
 
