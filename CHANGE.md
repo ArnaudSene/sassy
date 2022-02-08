@@ -1,3 +1,9 @@
+# 0.1.9
+## update: setup.py
+
+- add entry_point to declare sassy as a console_Script
+
+---
 # 0.1.8
 ## update: gitlab-ci
 
