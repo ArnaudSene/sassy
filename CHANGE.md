@@ -1,3 +1,9 @@
+# 0.1.13
+## feat: Add version in args options
+
+- Show sassy's version with --version
+
+---
 # 0.1.12
 ## update: Update docs and readme
 
