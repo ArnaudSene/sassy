@@ -13,18 +13,7 @@ from os.path import basename
 from sys import argv
 from textwrap import dedent
 
-from src import MessageService, RepoProvider, Sassy
-
-
-def get_version() -> str:
-    """
-    Get the version number from VERSION.
-
-    Returns (str):
-        The version number
-    """
-    with open('VERSION', 'r') as f:
-        return f.read()
+from src import MessageService, RepoProvider, Sassy, get_version
 
 
 class Parser:

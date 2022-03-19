@@ -34,12 +34,24 @@ from yaml import load, Loader
 from yaml.parser import ParserError
 
 PATH = Path(__file__).parent
+UPPER_PATH = PATH.parent
 ROOT_PATH = Path('.')
 
 MESSAGES_FILE = PATH / 'messages.yml'
 LOG_CONF_FILE = "logging_default.yml"
 CONFIG_FILE = 'sassy.yml'
 LOGGER = 'root'
+
+
+def get_version() -> str:
+    """
+    Get the version number from VERSION.
+
+    Returns (str):
+        The version number
+    """
+    with open(UPPER_PATH / 'VERSION', 'r') as f:
+        return f.read()
 
 
 @dataclass
